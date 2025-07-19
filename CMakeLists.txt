@@ -147,6 +147,34 @@ set_source_files_properties(glkterm/cgunicod.c PROPERTIES
 # Installation
 include(GNUInstallDirs)
 
+# Build launcher library (shared by glkcli and glktui)
+add_library(glklauncher STATIC
+    launcher/launcher.c
+    launcher/launcher_config.c
+    launcher/launcher_detect.c
+    launcher/launcher_cli.c
+)
+
+target_include_directories(glklauncher PUBLIC
+    launcher
+    glkterm
+)
+
+# Build glkcli (command-line launcher)
+add_executable(glkcli
+    launcher/glkcli/main.c
+)
+
+target_link_libraries(glkcli 
+    glklauncher
+    ${NCURSES_LIBRARIES}
+)
+
+target_include_directories(glkcli PRIVATE
+    launcher
+    glkterm
+)
+
 # Option to build interpreters
 option(BUILD_INTERPRETERS "Build interpreters (terps)" ON)
 
