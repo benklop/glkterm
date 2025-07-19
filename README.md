@@ -19,8 +19,11 @@ This project uses CMake as the build system, providing better cross-platform sup
 
 - CMake 3.16 or higher
 - A C compiler (GCC recommended)
+- A C++ compiler (for some interpreters)
 - ncurses development libraries
 - SDL2 and SDL2_mixer development libraries (optional, for sound support)
+- zlib development libraries (for SCARE interpreter)
+- .NET runtime (optional, for FrankenDrift interpreter when enabled)
 
 ### Building
 
@@ -54,6 +57,37 @@ This project uses CMake as the build system, providing better cross-platform sup
   cmake .. -DCMAKE_BUILD_TYPE=Release  # Release build (default)
   ```
 
+- **Enable/disable specific interpreters:**
+  ```bash
+  cmake .. -DWITH_SCOTT=OFF      # Disable Scott Adams interpreter
+  cmake .. -DWITH_TADS=OFF       # Disable TADS interpreter
+  cmake .. -DWITH_FRANKENDRIFT=ON # Enable FrankenDrift (.NET) interpreter
+  ```
+
+  All interpreters are enabled by default except FrankenDrift, which requires .NET.
+
+## Included Interpreters
+
+GlkTerm includes a collection of **16 interactive fiction interpreters** adapted to work with the glkterm library. These interpreters support a wide variety of adventure game formats including:
+
+- **Z-machine games** (Infocom format) - bocfel
+- **Glulx games** - git, glulxe  
+- **Scott Adams games** - scott, plus
+- **TADS games** - tadsr
+- **Alan games** - alan2, alan3
+- **Classic adventure systems** - advsys, agility, hugo, jacl, level9, magnetic, scare, taylor
+- **.NET interpreter** - frankendrift (disabled by default)
+
+### Quick Examples
+```bash
+./build/terps/bocfel zork1.z5         # Play Zork I
+./build/terps/git adventure.ulx       # Play a Glulx game  
+./build/terps/scott adventure1.dat    # Play Scott Adams adventure
+./build/terps/tadsr game.gam          # Play a TADS game
+```
+
+📖 **For detailed information about each interpreter, supported file formats, and usage examples, see [terps/README.md](terps/README.md).**
+
 ### Installation
 
 After building, you can install the library system-wide:
@@ -66,6 +100,7 @@ This will install:
 - `libglkterm.a` to the library directory
 - Header files to the include directory  
 - `Make.glkterm` to the include directory (for legacy Makefile compatibility)
+- All enabled interpreter executables to the bin directory
 
 ## Using the Library
 
@@ -85,6 +120,22 @@ include Make.glkterm
 your_program: your_program.o
 	$(CC) -o your_program your_program.o $(GLKLIB) $(LINKLIBS)
 ```
+
+## Using the Interpreters
+
+After building, interpreter executables are available in the `build/terps/` directory (or in your system's bin directory if installed). Each interpreter accepts game files and glkterm command-line options:
+
+```bash
+# Basic usage
+./build/terps/bocfel story.z5         # Z-machine games
+./build/terps/git game.ulx           # Glulx games  
+./build/terps/scott adventure.dat    # Scott Adams games
+
+# With glkterm options
+./build/terps/bocfel -width 132 -height 40 story.z8
+```
+
+📖 **See [terps/README.md](terps/README.md) for detailed usage examples, file format support, and interpreter-specific options.**
 
 ## Command-line Arguments
 

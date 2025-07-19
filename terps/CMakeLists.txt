@@ -14,6 +14,7 @@ option(WITH_SCARE "Enable the scare interpreter" ON)
 option(WITH_SCOTT "Enable the scott interpreter" ON)
 option(WITH_TADS "Enable the tads interpreter" ON)
 option(WITH_TAYLOR "Enable the taylor interpreter" ON)
+option(WITH_FRANKENDRIFT "Enable the frankendrift interpreter (requires .NET)" OFF)
 
 function(terp target)
     set(options POSIX LTO MATH WARNINGS GPL2)
@@ -512,6 +513,8 @@ if(WITH_TAYLOR)
         GPL2)
 endif()
 
+# FrankenDrift is a .NET interpreter that was originally designed for Garglk
+# It requires adaptation to work with glkterm and is disabled by default
 if(WITH_FRANKENDRIFT)
     add_subdirectory(frankendrift/FrankenDrift.GlkRunner/FrankenDrift.GlkRunner.Gargoyle)
 endif()
