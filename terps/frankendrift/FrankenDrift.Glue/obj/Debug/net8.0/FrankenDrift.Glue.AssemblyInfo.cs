@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("FrankenDrift.Glue")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("0.8.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("0.8.0-indev+dd8bb087cc78064530b21776292f7379af47c138")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("0.8.0-indev+5f08c61d48bb0f68a3d056fa19f557249be11f5e")]
 [assembly: System.Reflection.AssemblyProductAttribute("FrankenDrift.Glue")]
 [assembly: System.Reflection.AssemblyTitleAttribute("FrankenDrift.Glue")]
 [assembly: System.Reflection.AssemblyVersionAttribute("0.8.0.0")]
