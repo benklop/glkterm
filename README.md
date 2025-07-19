@@ -88,6 +88,35 @@ GlkTerm includes a collection of **16 interactive fiction interpreters** adapted
 
 📖 **For detailed information about each interpreter, supported file formats, and usage examples, see [terps/README.md](terps/README.md).**
 
+## Launcher System
+
+GlkTerm includes a **smart launcher system** that automatically detects game formats and launches the appropriate interpreter. This eliminates the need to manually select interpreters for different game files.
+
+### Quick Start with the Launcher
+
+```bash
+# Automatically detect and launch any supported game
+./build/glkcli mygame.z5              # Detects Z-code, launches with bocfel
+./build/glkcli adventure.ulx          # Detects Glulx, launches with git
+./build/glkcli story.t3               # Detects TADS, launches with tadsr
+
+# Show detected format without launching
+./build/glkcli -f mygame.gblorb       # Shows: "Detected format: Glulx"
+
+# Verbose output with additional information
+./build/glkcli -v adventure.z8        # Shows detection process and game info
+```
+
+### Supported Detection Methods
+
+- **Header-based detection**: Examines file magic bytes for reliable format identification
+- **Extension-based fallback**: Uses file extensions when header detection is inconclusive  
+- **Blorb support**: Automatically extracts and detects games embedded in Blorb containers (.gblorb, .blb)
+
+The launcher supports all 15+ game formats and automatically finds the correct interpreter from the collection built with glkterm.
+
+🚀 **For complete launcher documentation, usage examples, and advanced features, see [launcher/README.md](launcher/README.md).**
+
 ### Installation
 
 After building, you can install the library system-wide:
@@ -123,10 +152,17 @@ your_program: your_program.o
 
 ## Using the Interpreters
 
-After building, interpreter executables are available in the `build/terps/` directory (or in your system's bin directory if installed). Each interpreter accepts game files and glkterm command-line options:
+**Recommended**: Use the **launcher system** for automatic format detection:
+```bash
+./build/glkcli mygame.z5              # Automatically detects format and launches
+./build/glkcli -f mygame.blorb        # Show detected format  
+./build/glkcli -v adventure.ulx       # Verbose output
+```
+
+**Manual**: Interpreter executables are also available in the `build/terps/` directory (or in your system's bin directory if installed). Each interpreter accepts game files and glkterm command-line options:
 
 ```bash
-# Basic usage
+# Basic usage (manual interpreter selection)
 ./build/terps/bocfel story.z5         # Z-machine games
 ./build/terps/git game.ulx           # Glulx games  
 ./build/terps/scott adventure.dat    # Scott Adams games
