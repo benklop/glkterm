@@ -1,2 +1,0 @@
-/usr/bin/ar qc libc64diskimage.a CMakeFiles/c64diskimage.dir/c64diskimage.c.o
-/usr/bin/ranlib libc64diskimage.a
