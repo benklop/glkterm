@@ -1,0 +1,111 @@
+{
+  "version": 3,
+  "targets": {
+    "net8.0": {
+      "FrankenDrift.Adrift/0.8.0-indev": {
+        "type": "project",
+        "framework": ".NETCoreApp,Version=v8.0",
+        "dependencies": {
+          "FrankenDrift.Glue": "0.8.0-indev"
+        },
+        "compile": {
+          "bin/placeholder/FrankenDrift.Adrift.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/FrankenDrift.Adrift.dll": {}
+        }
+      },
+      "FrankenDrift.Glue/0.8.0-indev": {
+        "type": "project",
+        "framework": ".NETCoreApp,Version=v8.0",
+        "compile": {
+          "bin/placeholder/FrankenDrift.Glue.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/FrankenDrift.Glue.dll": {}
+        }
+      }
+    }
+  },
+  "libraries": {
+    "FrankenDrift.Adrift/0.8.0-indev": {
+      "type": "project",
+      "path": "../../FrankenDrift.Adrift/FrankenDrift.Adrift.vbproj",
+      "msbuildProject": "../../FrankenDrift.Adrift/FrankenDrift.Adrift.vbproj"
+    },
+    "FrankenDrift.Glue/0.8.0-indev": {
+      "type": "project",
+      "path": "../../FrankenDrift.Glue/FrankenDrift.Glue.csproj",
+      "msbuildProject": "../../FrankenDrift.Glue/FrankenDrift.Glue.csproj"
+    }
+  },
+  "projectFileDependencyGroups": {
+    "net8.0": [
+      "FrankenDrift.Adrift >= 0.8.0-indev",
+      "FrankenDrift.Glue >= 0.8.0-indev"
+    ]
+  },
+  "packageFolders": {
+    "/home/benklop/.nuget/packages/": {}
+  },
+  "project": {
+    "version": "1.0.0",
+    "restore": {
+      "projectUniqueName": "/home/benklop/repos/glkterm/terps/frankendrift/FrankenDrift.GlkRunner/FrankenDrift.GlkRunner/FrankenDrift.GlkRunner.csproj",
+      "projectName": "FrankenDrift.GlkRunner",
+      "projectPath": "/home/benklop/repos/glkterm/terps/frankendrift/FrankenDrift.GlkRunner/FrankenDrift.GlkRunner/FrankenDrift.GlkRunner.csproj",
+      "packagesPath": "/home/benklop/.nuget/packages/",
+      "outputPath": "/home/benklop/repos/glkterm/terps/frankendrift/FrankenDrift.GlkRunner/FrankenDrift.GlkRunner/obj/",
+      "projectStyle": "PackageReference",
+      "configFilePaths": [
+        "/home/benklop/.nuget/NuGet/NuGet.Config"
+      ],
+      "originalTargetFrameworks": [
+        "net8.0"
+      ],
+      "sources": {
+        "https://api.nuget.org/v3/index.json": {}
+      },
+      "frameworks": {
+        "net8.0": {
+          "targetAlias": "net8.0",
+          "projectReferences": {
+            "/home/benklop/repos/glkterm/terps/frankendrift/FrankenDrift.Adrift/FrankenDrift.Adrift.vbproj": {
+              "projectPath": "/home/benklop/repos/glkterm/terps/frankendrift/FrankenDrift.Adrift/FrankenDrift.Adrift.vbproj"
+            },
+            "/home/benklop/repos/glkterm/terps/frankendrift/FrankenDrift.Glue/FrankenDrift.Glue.csproj": {
+              "projectPath": "/home/benklop/repos/glkterm/terps/frankendrift/FrankenDrift.Glue/FrankenDrift.Glue.csproj"
+            }
+          }
+        }
+      },
+      "warningProperties": {
+        "warnAsError": [
+          "NU1605"
+        ]
+      }
+    },
+    "frameworks": {
+      "net8.0": {
+        "targetAlias": "net8.0",
+        "imports": [
+          "net461",
+          "net462",
+          "net47",
+          "net471",
+          "net472",
+          "net48",
+          "net481"
+        ],
+        "assetTargetFallback": true,
+        "warn": true,
+        "frameworkReferences": {
+          "Microsoft.NETCore.App": {
+            "privateAssets": "all"
+          }
+        },
+        "runtimeIdentifierGraphPath": "/usr/lib64/dotnet/sdk/8.0.117/PortableRuntimeIdentifierGraph.json"
+      }
+    }
+  }
+}

@@ -1,0 +1,1 @@
+/usr/lib64/ccache/cc  -O -Wl,--dependency-file=CMakeFiles/level9.dir/link.d CMakeFiles/level9.dir/level9/Glk/glk.c.o CMakeFiles/level9.dir/level9/bitmap.c.o CMakeFiles/level9.dir/level9/level9.c.o -o level9  ../libglkterm.a -lm -lncursesw -ltinfo -lSDL2_mixer -lSDL2

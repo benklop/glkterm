@@ -1,0 +1,241 @@
+{
+  "version": 3,
+  "targets": {
+    "net8.0": {
+      "Microsoft.DotNet.ILCompiler/8.0.17": {
+        "type": "package",
+        "build": {
+          "build/Microsoft.DotNet.ILCompiler.props": {}
+        }
+      },
+      "Microsoft.NET.ILLink.Tasks/8.0.17": {
+        "type": "package",
+        "build": {
+          "build/Microsoft.NET.ILLink.Tasks.props": {}
+        }
+      },
+      "FrankenDrift.Adrift/0.8.0-indev": {
+        "type": "project",
+        "framework": ".NETCoreApp,Version=v8.0",
+        "dependencies": {
+          "FrankenDrift.Glue": "0.8.0-indev"
+        },
+        "compile": {
+          "bin/placeholder/FrankenDrift.Adrift.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/FrankenDrift.Adrift.dll": {}
+        }
+      },
+      "FrankenDrift.GlkRunner/1.0.0": {
+        "type": "project",
+        "framework": ".NETCoreApp,Version=v8.0",
+        "dependencies": {
+          "FrankenDrift.Adrift": "0.8.0-indev",
+          "FrankenDrift.Glue": "0.8.0-indev"
+        },
+        "compile": {
+          "bin/placeholder/FrankenDrift.GlkRunner.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/FrankenDrift.GlkRunner.dll": {}
+        }
+      },
+      "FrankenDrift.Glue/0.8.0-indev": {
+        "type": "project",
+        "framework": ".NETCoreApp,Version=v8.0",
+        "compile": {
+          "bin/placeholder/FrankenDrift.Glue.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/FrankenDrift.Glue.dll": {}
+        }
+      }
+    }
+  },
+  "libraries": {
+    "Microsoft.DotNet.ILCompiler/8.0.17": {
+      "sha512": "09sjUN6lE2os7s3qZDKsZQvng84wquilKCMY+cWD993evNSW9kII9Gm6j+xI0bT/x0CNDdhkHDyAbB47ObF8Bw==",
+      "type": "package",
+      "path": "microsoft.dotnet.ilcompiler/8.0.17",
+      "hasTools": true,
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "Icon.png",
+        "LICENSE.TXT",
+        "THIRD-PARTY-NOTICES.TXT",
+        "build/BuildFrameworkNativeObjects.proj",
+        "build/Microsoft.DotNet.ILCompiler.SingleEntry.targets",
+        "build/Microsoft.DotNet.ILCompiler.props",
+        "build/Microsoft.NETCore.Native.Publish.targets",
+        "build/Microsoft.NETCore.Native.Unix.targets",
+        "build/Microsoft.NETCore.Native.Windows.targets",
+        "build/Microsoft.NETCore.Native.targets",
+        "build/NativeAOT.natstepfilter",
+        "build/NativeAOT.natvis",
+        "build/WindowsAPIs.txt",
+        "build/findvcvarsall.bat",
+        "microsoft.dotnet.ilcompiler.8.0.17.nupkg.sha512",
+        "microsoft.dotnet.ilcompiler.nuspec",
+        "runtime.json",
+        "tools/netstandard/ILCompiler.Build.Tasks.deps.json",
+        "tools/netstandard/ILCompiler.Build.Tasks.dll",
+        "tools/netstandard/ILCompiler.Build.Tasks.pdb"
+      ]
+    },
+    "Microsoft.NET.ILLink.Tasks/8.0.17": {
+      "sha512": "x5/y4l8AtshpBOrCZdlE4txw8K3e3s9meBFeZeR3l8hbbku2V7kK6ojhXvrbjg1rk3G+JqL1BI26gtgc1ZrdUw==",
+      "type": "package",
+      "path": "microsoft.net.illink.tasks/8.0.17",
+      "hasTools": true,
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "Icon.png",
+        "LICENSE.TXT",
+        "Sdk/Sdk.props",
+        "THIRD-PARTY-NOTICES.TXT",
+        "analyzers/dotnet/cs/ILLink.CodeFixProvider.dll",
+        "analyzers/dotnet/cs/ILLink.RoslynAnalyzer.dll",
+        "build/Microsoft.NET.ILLink.Analyzers.props",
+        "build/Microsoft.NET.ILLink.Tasks.props",
+        "build/Microsoft.NET.ILLink.targets",
+        "microsoft.net.illink.tasks.8.0.17.nupkg.sha512",
+        "microsoft.net.illink.tasks.nuspec",
+        "tools/net472/ILLink.Tasks.dll",
+        "tools/net472/ILLink.Tasks.dll.config",
+        "tools/net472/Mono.Cecil.Mdb.dll",
+        "tools/net472/Mono.Cecil.Pdb.dll",
+        "tools/net472/Mono.Cecil.Rocks.dll",
+        "tools/net472/Mono.Cecil.dll",
+        "tools/net472/Sdk/Sdk.props",
+        "tools/net472/System.Buffers.dll",
+        "tools/net472/System.Collections.Immutable.dll",
+        "tools/net472/System.Memory.dll",
+        "tools/net472/System.Numerics.Vectors.dll",
+        "tools/net472/System.Reflection.Metadata.dll",
+        "tools/net472/System.Runtime.CompilerServices.Unsafe.dll",
+        "tools/net472/build/Microsoft.NET.ILLink.Analyzers.props",
+        "tools/net472/build/Microsoft.NET.ILLink.Tasks.props",
+        "tools/net472/build/Microsoft.NET.ILLink.targets",
+        "tools/net8.0/ILLink.Tasks.deps.json",
+        "tools/net8.0/ILLink.Tasks.dll",
+        "tools/net8.0/Mono.Cecil.Mdb.dll",
+        "tools/net8.0/Mono.Cecil.Pdb.dll",
+        "tools/net8.0/Mono.Cecil.Rocks.dll",
+        "tools/net8.0/Mono.Cecil.dll",
+        "tools/net8.0/Sdk/Sdk.props",
+        "tools/net8.0/build/Microsoft.NET.ILLink.Analyzers.props",
+        "tools/net8.0/build/Microsoft.NET.ILLink.Tasks.props",
+        "tools/net8.0/build/Microsoft.NET.ILLink.targets",
+        "tools/net8.0/illink.deps.json",
+        "tools/net8.0/illink.dll",
+        "tools/net8.0/illink.runtimeconfig.json",
+        "useSharedDesignerContext.txt"
+      ]
+    },
+    "FrankenDrift.Adrift/0.8.0-indev": {
+      "type": "project",
+      "path": "../../FrankenDrift.Adrift/FrankenDrift.Adrift.vbproj",
+      "msbuildProject": "../../FrankenDrift.Adrift/FrankenDrift.Adrift.vbproj"
+    },
+    "FrankenDrift.GlkRunner/1.0.0": {
+      "type": "project",
+      "path": "../FrankenDrift.GlkRunner/FrankenDrift.GlkRunner.csproj",
+      "msbuildProject": "../FrankenDrift.GlkRunner/FrankenDrift.GlkRunner.csproj"
+    },
+    "FrankenDrift.Glue/0.8.0-indev": {
+      "type": "project",
+      "path": "../../FrankenDrift.Glue/FrankenDrift.Glue.csproj",
+      "msbuildProject": "../../FrankenDrift.Glue/FrankenDrift.Glue.csproj"
+    }
+  },
+  "projectFileDependencyGroups": {
+    "net8.0": [
+      "FrankenDrift.GlkRunner >= 1.0.0",
+      "Microsoft.DotNet.ILCompiler >= 8.0.17",
+      "Microsoft.NET.ILLink.Tasks >= 8.0.17"
+    ]
+  },
+  "packageFolders": {
+    "/home/benklop/.nuget/packages/": {}
+  },
+  "project": {
+    "version": "1.0.0",
+    "restore": {
+      "projectUniqueName": "/home/benklop/repos/glkterm/terps/frankendrift/FrankenDrift.GlkRunner/FrankenDrift.GlkRunner.Gargoyle/FrankenDrift.GlkRunner.Gargoyle.csproj",
+      "projectName": "FrankenDrift.GlkRunner.Gargoyle",
+      "projectPath": "/home/benklop/repos/glkterm/terps/frankendrift/FrankenDrift.GlkRunner/FrankenDrift.GlkRunner.Gargoyle/FrankenDrift.GlkRunner.Gargoyle.csproj",
+      "packagesPath": "/home/benklop/.nuget/packages/",
+      "outputPath": "/home/benklop/repos/glkterm/terps/frankendrift/FrankenDrift.GlkRunner/FrankenDrift.GlkRunner.Gargoyle/obj/",
+      "projectStyle": "PackageReference",
+      "configFilePaths": [
+        "/home/benklop/.nuget/NuGet/NuGet.Config"
+      ],
+      "originalTargetFrameworks": [
+        "net8.0"
+      ],
+      "sources": {
+        "https://api.nuget.org/v3/index.json": {}
+      },
+      "frameworks": {
+        "net8.0": {
+          "targetAlias": "net8.0",
+          "projectReferences": {
+            "/home/benklop/repos/glkterm/terps/frankendrift/FrankenDrift.GlkRunner/FrankenDrift.GlkRunner/FrankenDrift.GlkRunner.csproj": {
+              "projectPath": "/home/benklop/repos/glkterm/terps/frankendrift/FrankenDrift.GlkRunner/FrankenDrift.GlkRunner/FrankenDrift.GlkRunner.csproj"
+            }
+          }
+        }
+      },
+      "warningProperties": {
+        "warnAsError": [
+          "NU1605"
+        ]
+      }
+    },
+    "frameworks": {
+      "net8.0": {
+        "targetAlias": "net8.0",
+        "dependencies": {
+          "Microsoft.DotNet.ILCompiler": {
+            "suppressParent": "All",
+            "target": "Package",
+            "version": "[8.0.17, )",
+            "autoReferenced": true
+          },
+          "Microsoft.NET.ILLink.Tasks": {
+            "suppressParent": "All",
+            "target": "Package",
+            "version": "[8.0.17, )",
+            "autoReferenced": true
+          }
+        },
+        "imports": [
+          "net461",
+          "net462",
+          "net47",
+          "net471",
+          "net472",
+          "net48",
+          "net481"
+        ],
+        "assetTargetFallback": true,
+        "warn": true,
+        "downloadDependencies": [
+          {
+            "name": "runtime.linux-x64.Microsoft.DotNet.ILCompiler",
+            "version": "[8.0.17, 8.0.17]"
+          }
+        ],
+        "frameworkReferences": {
+          "Microsoft.NETCore.App": {
+            "privateAssets": "all"
+          }
+        },
+        "runtimeIdentifierGraphPath": "/usr/lib64/dotnet/sdk/8.0.117/PortableRuntimeIdentifierGraph.json"
+      }
+    }
+  }
+}

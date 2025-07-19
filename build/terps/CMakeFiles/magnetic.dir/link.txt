@@ -1,0 +1,1 @@
+/usr/lib64/ccache/cc  -O -Wl,--dependency-file=CMakeFiles/magnetic.dir/link.d CMakeFiles/magnetic.dir/magnetic/Generic/emu.c.o CMakeFiles/magnetic.dir/magnetic/Glk/glk.c.o -o magnetic  ../libglkterm.a -lncursesw -ltinfo -lSDL2_mixer -lSDL2

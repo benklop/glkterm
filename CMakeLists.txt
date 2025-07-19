@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(glkterm C)
+project(glkterm C CXX)
 
 # Set C standard
 set(CMAKE_C_STANDARD 90)
@@ -14,16 +14,38 @@ option(ENABLE_SOUND "Enable sound support using SDL2_mixer" ON)
 # Find required packages
 find_package(PkgConfig)
 
-# Find ncurses
+# Find ncurses (prefer wide character version)
 if(PKG_CONFIG_FOUND)
-    pkg_check_modules(NCURSES ncurses)
+    # Try ncursesw first for extended functions
+    pkg_check_modules(NCURSES ncursesw)
+    if(NOT NCURSES_FOUND)
+        # Fall back to regular ncurses
+        pkg_check_modules(NCURSES ncurses)
+    endif()
 endif()
 
 if(NOT NCURSES_FOUND)
     # Fallback to manual linking if pkg-config doesn't work
     message(WARNING "pkg-config for ncurses not found, using manual linking")
-    set(NCURSES_LIBRARIES ncurses)
+    # Try ncursesw first
+    find_library(NCURSESW_LIBRARY ncursesw)
+    if(NCURSESW_LIBRARY)
+        set(NCURSES_LIBRARIES ncursesw)
+    else()
+        set(NCURSES_LIBRARIES ncurses)
+    endif()
 endif()
+
+# Test for extended ncurses functions
+include(CheckSymbolExists)
+set(CMAKE_REQUIRED_LIBRARIES ${NCURSES_LIBRARIES})
+if(NCURSES_FOUND)
+    set(CMAKE_REQUIRED_FLAGS ${NCURSES_CFLAGS})
+endif()
+check_symbol_exists(alloc_pair "ncurses.h" HAVE_ALLOC_PAIR)
+check_symbol_exists(init_extended_pair "ncurses.h" HAVE_INIT_EXTENDED_PAIR)
+unset(CMAKE_REQUIRED_LIBRARIES)
+unset(CMAKE_REQUIRED_FLAGS)
 
 # Find SDL2 if sound is enabled
 if(ENABLE_SOUND)
@@ -96,6 +118,14 @@ if(NOT ENABLE_SOUND OR NOT SDL2_FOUND)
     target_compile_definitions(glkterm PRIVATE GLK_NO_SOUND)
 endif()
 
+# Define extended ncurses function availability
+if(HAVE_ALLOC_PAIR)
+    target_compile_definitions(glkterm PRIVATE HAVE_ALLOC_PAIR)
+endif()
+if(HAVE_INIT_EXTENDED_PAIR)
+    target_compile_definitions(glkterm PRIVATE HAVE_INIT_EXTENDED_PAIR)
+endif()
+
 # Link libraries
 target_link_libraries(glkterm PUBLIC ${NCURSES_LIBRARIES})
 
@@ -115,6 +145,14 @@ set_source_files_properties(cgunicod.c PROPERTIES
 
 # Installation
 include(GNUInstallDirs)
+
+# Option to build interpreters
+option(BUILD_INTERPRETERS "Build interpreters (terps)" ON)
+
+if(BUILD_INTERPRETERS)
+    # Add interpreters subdirectory
+    add_subdirectory(terps)
+endif()
 
 install(TARGETS glkterm
     EXPORT glkterm-targets

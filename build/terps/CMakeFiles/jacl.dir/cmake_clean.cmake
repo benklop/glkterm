@@ -1,0 +1,40 @@
+file(REMOVE_RECURSE
+  "CMakeFiles/jacl.dir/link.d"
+  "CMakeFiles/jacl.dir/jacl/display.c.o"
+  "CMakeFiles/jacl.dir/jacl/display.c.o.d"
+  "CMakeFiles/jacl.dir/jacl/encapsulate.c.o"
+  "CMakeFiles/jacl.dir/jacl/encapsulate.c.o.d"
+  "CMakeFiles/jacl.dir/jacl/errors.c.o"
+  "CMakeFiles/jacl.dir/jacl/errors.c.o.d"
+  "CMakeFiles/jacl.dir/jacl/findroute.c.o"
+  "CMakeFiles/jacl.dir/jacl/findroute.c.o.d"
+  "CMakeFiles/jacl.dir/jacl/glk_saver.c.o"
+  "CMakeFiles/jacl.dir/jacl/glk_saver.c.o.d"
+  "CMakeFiles/jacl.dir/jacl/glk_startup.c.o"
+  "CMakeFiles/jacl.dir/jacl/glk_startup.c.o.d"
+  "CMakeFiles/jacl.dir/jacl/interpreter.c.o"
+  "CMakeFiles/jacl.dir/jacl/interpreter.c.o.d"
+  "CMakeFiles/jacl.dir/jacl/jacl.c.o"
+  "CMakeFiles/jacl.dir/jacl/jacl.c.o.d"
+  "CMakeFiles/jacl.dir/jacl/jpp.c.o"
+  "CMakeFiles/jacl.dir/jacl/jpp.c.o.d"
+  "CMakeFiles/jacl.dir/jacl/libcsv.c.o"
+  "CMakeFiles/jacl.dir/jacl/libcsv.c.o.d"
+  "CMakeFiles/jacl.dir/jacl/loader.c.o"
+  "CMakeFiles/jacl.dir/jacl/loader.c.o.d"
+  "CMakeFiles/jacl.dir/jacl/logging.c.o"
+  "CMakeFiles/jacl.dir/jacl/logging.c.o.d"
+  "CMakeFiles/jacl.dir/jacl/parser.c.o"
+  "CMakeFiles/jacl.dir/jacl/parser.c.o.d"
+  "CMakeFiles/jacl.dir/jacl/resolvers.c.o"
+  "CMakeFiles/jacl.dir/jacl/resolvers.c.o.d"
+  "CMakeFiles/jacl.dir/jacl/utils.c.o"
+  "CMakeFiles/jacl.dir/jacl/utils.c.o.d"
+  "jacl"
+  "jacl.pdb"
+)
+
+# Per-language clean rules from dependency scanning.
+foreach(lang C)
+  include(CMakeFiles/jacl.dir/cmake_clean_${lang}.cmake OPTIONAL)
+endforeach()

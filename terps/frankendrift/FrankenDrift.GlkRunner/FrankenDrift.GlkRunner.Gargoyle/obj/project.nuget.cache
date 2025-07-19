@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "dgSpecHash": "tQpZFR+BKM/SA9TRvbUwytS9ZtSQWT5AUlQiUPRg4Y/jul7tIkc6JBj+rwsJolopLKAmX71oKt7jOHA56Crk3w==",
+  "success": true,
+  "projectFilePath": "/home/benklop/repos/glkterm/terps/frankendrift/FrankenDrift.GlkRunner/FrankenDrift.GlkRunner.Gargoyle/FrankenDrift.GlkRunner.Gargoyle.csproj",
+  "expectedPackageFiles": [
+    "/home/benklop/.nuget/packages/microsoft.dotnet.ilcompiler/8.0.17/microsoft.dotnet.ilcompiler.8.0.17.nupkg.sha512",
+    "/home/benklop/.nuget/packages/microsoft.net.illink.tasks/8.0.17/microsoft.net.illink.tasks.8.0.17.nupkg.sha512",
+    "/home/benklop/.nuget/packages/runtime.linux-x64.microsoft.dotnet.ilcompiler/8.0.17/runtime.linux-x64.microsoft.dotnet.ilcompiler.8.0.17.nupkg.sha512"
+  ],
+  "logs": []
+}
