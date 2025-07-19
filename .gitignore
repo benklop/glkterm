@@ -1,3 +1,5 @@
 *.o
 *.a
 Make.*
+build/
+.vscode/
