@@ -61,47 +61,47 @@ endif()
 
 # Define the library source files
 set(GLKTERM_SOURCES
-    main.c
-    gtevent.c
-    gtfref.c
-    gtgestal.c
-    gtinput.c
-    gtmessag.c
-    gtmessin.c
-    gtmisc.c
-    gtstream.c
-    gtstyle.c
-    gtw_blnk.c
-    gtw_buf.c
-    gtw_grid.c
-    gtw_pair.c
-    gtwindow.c
-    gtblorb.c
-    cgunicod.c
-    cgdate.c
-    gi_dispa.c
-    gi_blorb.c
+    glkterm/main.c
+    glkterm/gtevent.c
+    glkterm/gtfref.c
+    glkterm/gtgestal.c
+    glkterm/gtinput.c
+    glkterm/gtmessag.c
+    glkterm/gtmessin.c
+    glkterm/gtmisc.c
+    glkterm/gtstream.c
+    glkterm/gtstyle.c
+    glkterm/gtw_blnk.c
+    glkterm/gtw_buf.c
+    glkterm/gtw_grid.c
+    glkterm/gtw_pair.c
+    glkterm/gtwindow.c
+    glkterm/gtblorb.c
+    glkterm/cgunicod.c
+    glkterm/cgdate.c
+    glkterm/gi_dispa.c
+    glkterm/gi_blorb.c
 )
 
 # Conditionally add sound-related source files
 if(ENABLE_SOUND AND SDL2_FOUND)
-    list(APPEND GLKTERM_SOURCES gtschan.c)
+    list(APPEND GLKTERM_SOURCES glkterm/gtschan.c)
 endif()
 
 # Define the library headers
 set(GLKTERM_HEADERS
-    glk.h
-    glkstart.h
-    glkterm.h
-    gtoption.h
-    gtw_blnk.h
-    gtw_buf.h
-    gtw_grid.h
-    gtw_pair.h
-    gi_dispa.h
-    gi_blorb.h
-    cssrgb.h
-    tailq.h
+    glkterm/glk.h
+    glkterm/glkstart.h
+    glkterm/glkterm.h
+    glkterm/gtoption.h
+    glkterm/gtw_blnk.h
+    glkterm/gtw_buf.h
+    glkterm/gtw_grid.h
+    glkterm/gtw_pair.h
+    glkterm/gi_dispa.h
+    glkterm/gi_blorb.h
+    glkterm/cssrgb.h
+    glkterm/tailq.h
 )
 
 # Create the static library
@@ -110,6 +110,7 @@ add_library(glkterm STATIC ${GLKTERM_SOURCES})
 # Set target properties
 target_include_directories(glkterm PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/glkterm>
     $<INSTALL_INTERFACE:include>
 )
 
@@ -139,12 +140,40 @@ if(ENABLE_SOUND AND SDL2_FOUND)
 endif()
 
 # Handle special compilation for cgunicod.c (depends on cgunigen.c)
-set_source_files_properties(cgunicod.c PROPERTIES
-    OBJECT_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/cgunigen.c
+set_source_files_properties(glkterm/cgunicod.c PROPERTIES
+    OBJECT_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/glkterm/cgunigen.c
 )
 
 # Installation
 include(GNUInstallDirs)
+
+# Build launcher library (shared by glkcli and glktui)
+add_library(glklauncher STATIC
+    launcher/launcher.c
+    launcher/launcher_config.c
+    launcher/launcher_detect.c
+    launcher/launcher_cli.c
+)
+
+target_include_directories(glklauncher PUBLIC
+    launcher
+    glkterm
+)
+
+# Build glkcli (command-line launcher)
+add_executable(glkcli
+    launcher/glkcli/main.c
+)
+
+target_link_libraries(glkcli 
+    glklauncher
+    ${NCURSES_LIBRARIES}
+)
+
+target_include_directories(glkcli PRIVATE
+    launcher
+    glkterm
+)
 
 # Option to build interpreters
 option(BUILD_INTERPRETERS "Build interpreters (terps)" ON)
