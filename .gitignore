@@ -2,3 +2,4 @@
 *.a
 Make.*
 build/
+.vscode/
