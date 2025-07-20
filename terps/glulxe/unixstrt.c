@@ -11,6 +11,10 @@
 #include "unixstrt.h"
 #include "glkstart.h" /* This comes with the Glk library. */
 
+#ifdef GLKUNIX_AUTOSAVE_FEATURES
+#include "glkunix_autosave.h"
+#endif
+
 #if VM_DEBUGGER
 /* This header file may come with the Glk library. If it doesn't, comment
    out VM_DEBUGGER in glulxe.h -- you won't be able to use debugging. */

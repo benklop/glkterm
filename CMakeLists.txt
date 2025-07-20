@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.16)
 project(glkterm C CXX)
 
 # Set C standard
-set(CMAKE_C_STANDARD 90)
+set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
 # Compiler options
@@ -81,6 +81,7 @@ set(GLKTERM_SOURCES
     glkterm/cgdate.c
     glkterm/gi_dispa.c
     glkterm/gi_blorb.c
+    glkterm/gtautosave.c
 )
 
 # Conditionally add sound-related source files
@@ -102,6 +103,7 @@ set(GLKTERM_HEADERS
     glkterm/gi_blorb.h
     glkterm/cssrgb.h
     glkterm/tailq.h
+    glkterm/glkunix_autosave.h
 )
 
 # Create the static library
@@ -126,6 +128,9 @@ endif()
 if(HAVE_INIT_EXTENDED_PAIR)
     target_compile_definitions(glkterm PRIVATE HAVE_INIT_EXTENDED_PAIR)
 endif()
+
+# Enable autosave features
+target_compile_definitions(glkterm PUBLIC GLKUNIX_AUTOSAVE_FEATURES)
 
 # Link libraries
 target_link_libraries(glkterm PUBLIC ${NCURSES_LIBRARIES})

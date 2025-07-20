@@ -332,6 +332,11 @@ extern fileref_t *gli_new_fileref(char *filename, glui32 usage,
     glui32 rock);
 extern void gli_delete_fileref(fileref_t *fref);
 
+/* Autosave functions */
+#ifdef GLKUNIX_AUTOSAVE_FEATURES
+extern void gli_set_last_event_type(glui32 event_type);
+#endif
+
 /* A macro that I can't think of anywhere else to put it. */
 
 #define gli_event_clearevent(evp)  \

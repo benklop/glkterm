@@ -15,6 +15,8 @@
 
 #ifdef GLKUNIX_AUTOSAVE_FEATURES
 
+#include "glkunix_autosave.h"
+
 char *pref_autosavedir = ".";
 char *pref_autosavename = "autosave";
 int pref_autosave_skiparrange = FALSE;
@@ -666,8 +668,8 @@ static int extra_state_unserialize(glkunix_unserialize_context_t ctx, void *rock
     glkunix_unserialize_uint32(ctx, "glulx_iosys_rock", &state->iosys_rock);
     glkunix_unserialize_uint32(ctx, "glulx_stringtable", &state->stringtable);
 
-    glkunix_unserialize_context_t array;
-    int count;
+    void *array;
+    glui32 count;
     
     if (glkunix_unserialize_list(ctx, "glulx_accel_params", &array, &count)) {
         if (count) {

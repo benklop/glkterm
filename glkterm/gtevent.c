@@ -154,6 +154,11 @@ void glk_select(event_t *event)
     *event = event_node->event;
     TAILQ_REMOVE(&events, event_node, entries);
     free(event_node);
+    
+    /* Track the last event type for autosave purposes */
+#ifdef GLKUNIX_AUTOSAVE_FEATURES
+    gli_set_last_event_type(event->type);
+#endif
 }
 
 void glk_select_poll(event_t *event)
@@ -224,6 +229,11 @@ void glk_select_poll(event_t *event)
             *event = event_node->event;
             TAILQ_REMOVE(&events, event_node, entries);
             free(event_node);
+            
+            /* Track the last event type for autosave purposes */
+#ifdef GLKUNIX_AUTOSAVE_FEATURES
+            gli_set_last_event_type(event->type);
+#endif
             return;
         }
         default:

@@ -261,7 +261,7 @@ if(WITH_GLULXE)
         glulxe/funcs.c glulxe/operand.c glulxe/string.c glulxe/glkop.c
         glulxe/heap.c glulxe/serial.c glulxe/search.c glulxe/gestalt.c
         glulxe/osdepend.c glulxe/unixstrt.c glulxe/accel.c glulxe/profile.c
-        glulxe/float.c
+        glulxe/float.c glulxe/unixautosave.c
         MACROS ${GLULXE_MACROS}
         MATH
         POSIX
