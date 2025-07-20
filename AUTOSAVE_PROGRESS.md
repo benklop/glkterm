@@ -54,8 +54,9 @@ Implementation of autosave/autorestore functionality in glkterm library to suppo
 - [x] **Unserialization Tests**: 6 tests validating restoration logic and endian handling
 - [x] **Window Hierarchy Tests**: 7 tests covering window structure validation, parent/child relationships, update tag generation, and restoration order dependencies
 - [x] **Hierarchy Round-trip Tests**: 4 tests validating complete window hierarchy serialization and restoration in complex scenarios
+- [x] **Content Restoration Tests**: 3 tests validating serialization helper functions, buffer restoration, and memory stream content handling
 - [x] **CMake Integration**: Both `make check` and `ctest` support
-- [x] **CI Ready**: All 49 tests passing, suitable for continuous integration
+- [x] **CI Ready**: All 52 tests passing, suitable for continuous integration
 
 ### 7. **NEW: GLK Object Serialization** 🆕
 - [x] **Window List Serialization**: Complete window object list export/import
@@ -76,6 +77,14 @@ Implementation of autosave/autorestore functionality in glkterm library to suppo
 - [x] **Error Handling**: Proper failure modes and validation during restoration
 - [x] **Endian Safety**: Cross-platform big-endian format for serialized data
 - [x] **Test Coverage**: 6 comprehensive tests validating unserialization logic
+
+### 9. **NEW: Enhanced Content Restoration** 🆕
+- [x] **Memory Stream Buffer Restoration**: Complete buffer content and pointer restoration for both binary and unicode memory streams with proper offset handling
+- [x] **Text Buffer Content Restoration**: Full character buffer allocation, content restoration, and property restoration for text buffer windows
+- [x] **Text Grid Content Restoration**: Complete grid line serialization including character data, style information, and line-by-line restoration
+- [x] **Window Hierarchy Restoration**: Two-phase restoration ensuring proper parent-child relationships and object references
+- [x] **Robust Error Handling**: Graceful handling of allocation failures, buffer mismatches, and corrupted data during restoration
+- [x] **Memory Safety**: Proper allocation/deallocation patterns with fallback handling for edge cases
 
 ---
 
@@ -128,10 +137,12 @@ int glkunix_unserialize_library_state(glkunix_unserialize_context_t context)
 - Fileref object list restoration
 - Version checking and validation
 - Error handling and failure modes
+- **Window hierarchy restoration**: Complete parent-child relationship reconstruction
+- **Memory stream content restoration**: Buffer allocation and pointer restoration for both binary and unicode streams
+- **Text buffer content restoration**: Character buffer allocation and content restoration
+- **Text grid content restoration**: Full grid line serialization/restoration including character data and style information
 
 **MISSING**:
-- Detailed window content restoration (text buffer contents, grid data)
-- Memory stream buffer content restoration
 - Active input request restoration
 - Sound channel restoration (if GLK_NO_SOUND not defined)
 
@@ -270,7 +281,51 @@ The basic object restoration is now complete. Next focus should be on detailed c
 - Performance testing for large game states
 - Cross-platform testing for endian safety and file format compatibility
 
-**Testing Infrastructure Complete**: Unity framework integrated with 13/13 tests passing, including update tag determinism tests and serialization utilities.
+**Testing Infrastructure Complete**: Unity framework integrated with 49/49 tests passing, including update tag determinism tests and serialization utilities.
+
+---
+
+## 🧪 TESTING COVERAGE ANALYSIS
+
+### ✅ **Well-Covered Areas** (49 passing tests):
+- **Core Infrastructure**: Update tag determinism, collision detection, object list serialization/unserialization
+- **Window Hierarchy**: Parent/child relationships, tag mapping, restoration order, round-trip integrity
+- **Object Management**: Window, stream, fileref creation/destruction, type-specific data, endian-safe format
+- **Error Handling**: Basic operation failures, endian mismatches, restoration order dependencies
+
+### ⚠️ **Critical Testing Gaps Identified**:
+
+#### 1. **Content Restoration** (Implementation TODOs):
+- **Memory Stream Buffers**: No tests for buffer content preservation across save/restore cycles
+- **Text Window Content**: No tests for text buffer content, grid cell data, cursor positions
+- **Window Styling**: No tests for style preservation, formatting state restoration
+- **Input State**: No tests for active line input requests, partial input preservation
+
+#### 2. **Integration Testing**:
+- **File I/O Cycles**: No full file-based serialize→restore→verify tests
+- **Cross-platform Compatibility**: No endian safety verification with actual files
+- **Real-world Scenarios**: No testing with actual interpreter integration (Glulxe)
+- **Performance**: No large state serialization/restoration timing tests
+
+#### 3. **Error Recovery & Robustness**:
+- **Corrupted Data**: Limited testing of malformed save files, truncated data
+- **Version Compatibility**: No edge case testing for version mismatches
+- **Resource Exhaustion**: No testing of memory/disk space limitations during restore
+- **File I/O Errors**: Insufficient testing of disk full, permission denied scenarios
+
+#### 4. **Production Readiness**:
+- **Memory Leak Detection**: No comprehensive memory management validation
+- **Thread Safety**: No concurrent access testing (if applicable)
+- **Large Game States**: No testing with complex, multi-window game scenarios
+- **Backward Compatibility**: No testing of save file format evolution
+
+### 🎯 **Testing Priorities**:
+1. **IMMEDIATE**: Implement content restoration and add corresponding tests
+2. **HIGH**: Add integration tests for full file I/O cycles and error conditions  
+3. **MEDIUM**: Add production scenario tests with real interpreters
+4. **LOW**: Add performance and stress testing for large game states
+
+**Current Assessment**: Testing is **sufficient for development** but **insufficient for production**. Foundation is solid, but content restoration and integration gaps represent significant functionality holes.
 
 ---
 

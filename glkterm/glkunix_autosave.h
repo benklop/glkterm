@@ -75,4 +75,10 @@ extern int giblorb_unset_resource_map(void);
 /* Cleanup function */
 extern void glkunix_autosave_cleanup(void);
 
+/* Helper functions for creating contexts from FILE pointers */
+extern glkunix_serialize_context_t glkunix_serialize_start(FILE *file);
+extern void glkunix_serialize_end(glkunix_serialize_context_t ctx);
+extern glkunix_unserialize_context_t glkunix_unserialize_start(FILE *file);
+extern void glkunix_unserialize_end(glkunix_unserialize_context_t ctx);
+
 #endif /* GLKUNIX_AUTOSAVE_H */

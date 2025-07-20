@@ -771,9 +771,43 @@ static int serialize_textgrid_data(glkunix_serialize_context_t context, window_t
         return 0;
     }
     
-    /* Note: For now, we skip serializing the actual grid content (lines array)
-     * This would require more complex serialization of the tgline_t structures
-     * and their character/style data. This is a TODO for full implementation. */
+    /* Serialize grid content (lines array) */
+    if (dwin->lines && dwin->height > 0) {
+        /* Serialize each line */
+        for (int line = 0; line < dwin->height; line++) {
+            tgline_t *tgline = &dwin->lines[line];
+            
+            /* Serialize line properties */
+            if (!glkunix_serialize_uint32(context, "tg_line_size", tgline->size) ||
+                !glkunix_serialize_uint32(context, "tg_line_dirtybeg", tgline->dirtybeg) ||
+                !glkunix_serialize_uint32(context, "tg_line_dirtyend", tgline->dirtyend)) {
+                return 0;
+            }
+            
+            /* Serialize character data */
+            if (tgline->chars && dwin->width > 0) {
+                if (!glkunix_serialize_buffer(context, "tg_line_chars", tgline->chars, dwin->width)) {
+                    return 0;
+                }
+            } else {
+                if (!glkunix_serialize_buffer(context, "tg_line_chars", NULL, 0)) {
+                    return 0;
+                }
+            }
+            
+            /* Serialize style data */
+            if (tgline->styleplusses && dwin->width > 0) {
+                if (!glkunix_serialize_buffer(context, "tg_line_styles", 
+                        (unsigned char*)tgline->styleplusses, dwin->width * sizeof(styleplus_t))) {
+                    return 0;
+                }
+            } else {
+                if (!glkunix_serialize_buffer(context, "tg_line_styles", NULL, 0)) {
+                    return 0;
+                }
+            }
+        }
+    }
     
     return 1;
 }
@@ -895,6 +929,13 @@ static int serialize_stream(glkunix_serialize_context_t context, stream_t *str)
                     !glkunix_serialize_uint32(context, "ubuf_eof_offset", eof_offset)) {
                     return 0;
                 }
+                
+                /* Serialize unicode buffer content */
+                if (str->buflen > 0 && str->ubuf) {
+                    if (!glkunix_serialize_buffer(context, "ubuf_data", str->ubuf, str->buflen * sizeof(glui32))) {
+                        return 0;
+                    }
+                }
             } else {
                 glui32 ptr_offset = str->bufptr ? (str->bufptr - str->buf) : 0;
                 glui32 end_offset = str->bufend ? (str->bufend - str->buf) : 0;
@@ -903,6 +944,13 @@ static int serialize_stream(glkunix_serialize_context_t context, stream_t *str)
                     !glkunix_serialize_uint32(context, "buf_end_offset", end_offset) ||
                     !glkunix_serialize_uint32(context, "buf_eof_offset", eof_offset)) {
                     return 0;
+                }
+                
+                /* Serialize binary buffer content */
+                if (str->buflen > 0 && str->buf) {
+                    if (!glkunix_serialize_buffer(context, "buf_data", str->buf, str->buflen)) {
+                        return 0;
+                    }
                 }
             }
             break;
@@ -1228,7 +1276,67 @@ static int unserialize_stream(glkunix_unserialize_context_t context)
                 if (str) {
                     str->buflen = buflen;
                     str->isbinary = isbinary;
-                    /* TODO: Allocate and restore buffer contents */
+                    
+                    /* Allocate and restore buffer contents */
+                    if (buflen > 0) {
+                        if (str->isbinary) {
+                            /* Binary memory stream - allocate char buffer */
+                            str->buf = malloc(buflen);
+                            if (str->buf) {
+                                /* Restore buffer content from serialized data */
+                                if (!glkunix_unserialize_buffer(context, "buf_data", str->buf, buflen)) {
+                                    free(str->buf);
+                                    str->buf = NULL;
+                                    str->buflen = 0;
+                                } else {
+                                    /* Restore buffer pointers based on saved offsets */
+                                    glui32 ptr_offset, end_offset, eof_offset;
+                                    if (glkunix_unserialize_uint32(context, "buf_ptr_offset", &ptr_offset) &&
+                                        glkunix_unserialize_uint32(context, "buf_end_offset", &end_offset) &&
+                                        glkunix_unserialize_uint32(context, "buf_eof_offset", &eof_offset)) {
+                                        str->bufptr = str->buf + ((ptr_offset < buflen) ? ptr_offset : buflen);
+                                        str->bufend = str->buf + ((end_offset < buflen) ? end_offset : buflen);
+                                        str->bufeof = str->buf + ((eof_offset < buflen) ? eof_offset : buflen);
+                                    } else {
+                                        /* Fallback to safe defaults */
+                                        str->bufptr = str->buf;
+                                        str->bufend = str->buf + buflen;
+                                        str->bufeof = str->buf;
+                                    }
+                                }
+                            } else {
+                                str->buflen = 0;
+                            }
+                        } else {
+                            /* Unicode memory stream - allocate glui32 buffer */
+                            str->ubuf = malloc(buflen * sizeof(glui32));
+                            if (str->ubuf) {
+                                /* Restore unicode buffer content */
+                                if (!glkunix_unserialize_buffer(context, "ubuf_data", str->ubuf, buflen * sizeof(glui32))) {
+                                    free(str->ubuf);
+                                    str->ubuf = NULL;
+                                    str->buflen = 0;
+                                } else {
+                                    /* Restore buffer pointers based on saved offsets */
+                                    glui32 ptr_offset, end_offset, eof_offset;
+                                    if (glkunix_unserialize_uint32(context, "ubuf_ptr_offset", &ptr_offset) &&
+                                        glkunix_unserialize_uint32(context, "ubuf_end_offset", &end_offset) &&
+                                        glkunix_unserialize_uint32(context, "ubuf_eof_offset", &eof_offset)) {
+                                        str->ubufptr = str->ubuf + ((ptr_offset < buflen) ? ptr_offset : buflen);
+                                        str->ubufend = str->ubuf + ((end_offset < buflen) ? end_offset : buflen);
+                                        str->ubufeof = str->ubuf + ((eof_offset < buflen) ? eof_offset : buflen);
+                                    } else {
+                                        /* Fallback to safe defaults */
+                                        str->ubufptr = str->ubuf;
+                                        str->ubufend = str->ubuf + buflen;
+                                        str->ubufeof = str->ubuf;
+                                    }
+                                }
+                            } else {
+                                str->buflen = 0;
+                            }
+                        }
+                    }
                 }
             }
             break;
@@ -1314,11 +1422,203 @@ static int unserialize_window_data(glkunix_unserialize_context_t context, window
     /* Unserialize type-specific window data */
     switch (win->type) {
         case wintype_TextBuffer:
-            /* TODO: Restore text buffer contents */
+            {
+                /* Restore text buffer contents */
+                window_textbuffer_t *dwin = win->data;
+                if (dwin) {
+                    glui32 numchars, charssize, width, height;
+                    glui32 dirtybeg, dirtyend, dirtydelta;
+                    
+                    /* Restore text buffer properties */
+                    if (!glkunix_unserialize_uint32(context, "tb_numchars", &numchars) ||
+                        !glkunix_unserialize_uint32(context, "tb_charssize", &charssize) ||
+                        !glkunix_unserialize_uint32(context, "tb_width", &width) ||
+                        !glkunix_unserialize_uint32(context, "tb_height", &height) ||
+                        !glkunix_unserialize_uint32(context, "tb_dirtybeg", &dirtybeg) ||
+                        !glkunix_unserialize_uint32(context, "tb_dirtyend", &dirtyend) ||
+                        !glkunix_unserialize_uint32(context, "tb_dirtydelta", &dirtydelta)) {
+                        return 0;
+                    }
+                    
+                    /* Restore text buffer content */
+                    if (numchars > 0) {
+                        /* Allocate buffer for character data */
+                        char *chars = malloc(charssize > numchars ? charssize : numchars);
+                        if (chars) {
+                            if (glkunix_unserialize_buffer(context, "tb_chars", chars, numchars)) {
+                                /* Free existing buffer and set new one */
+                                if (dwin->chars) {
+                                    free(dwin->chars);
+                                }
+                                dwin->chars = chars;
+                                dwin->numchars = numchars;
+                                dwin->charssize = charssize > numchars ? charssize : numchars;
+                                dwin->width = width;
+                                dwin->height = height;
+                                dwin->dirtybeg = dirtybeg;
+                                dwin->dirtyend = dirtyend;
+                                dwin->dirtydelta = dirtydelta;
+                                dwin->drawall = 1; /* Force redraw */
+                            } else {
+                                free(chars);
+                                return 0;
+                            }
+                        } else {
+                            return 0;
+                        }
+                    } else {
+                        /* Empty buffer case */
+                        glkunix_unserialize_buffer(context, "tb_chars", NULL, 0); /* Consume the empty buffer data */
+                        if (dwin->chars) {
+                            free(dwin->chars);
+                            dwin->chars = NULL;
+                        }
+                        dwin->numchars = 0;
+                        dwin->charssize = 0;
+                    }
+                }
+            }
             break;
             
         case wintype_TextGrid:
-            /* TODO: Restore grid contents and cursor position */
+            {
+                /* Restore grid contents and cursor position */
+                window_textgrid_t *dwin = win->data;
+                if (dwin) {
+                    glui32 width, height, curx, cury, dirtybeg, dirtyend;
+                    glui32 inunicode, inorgx, inorgy;
+                    
+                    /* Restore text grid properties */
+                    if (!glkunix_unserialize_uint32(context, "tg_width", &width) ||
+                        !glkunix_unserialize_uint32(context, "tg_height", &height) ||
+                        !glkunix_unserialize_uint32(context, "tg_curx", &curx) ||
+                        !glkunix_unserialize_uint32(context, "tg_cury", &cury) ||
+                        !glkunix_unserialize_uint32(context, "tg_dirtybeg", &dirtybeg) ||
+                        !glkunix_unserialize_uint32(context, "tg_dirtyend", &dirtyend)) {
+                        return 0;
+                    }
+                    
+                    /* Restore input state */
+                    if (!glkunix_unserialize_uint32(context, "tg_inunicode", &inunicode) ||
+                        !glkunix_unserialize_uint32(context, "tg_inorgx", &inorgx) ||
+                        !glkunix_unserialize_uint32(context, "tg_inorgy", &inorgy)) {
+                        return 0;
+                    }
+                    
+                    /* Update grid properties */
+                    dwin->width = width;
+                    dwin->height = height;
+                    dwin->curx = curx;
+                    dwin->cury = cury;
+                    dwin->dirtybeg = dirtybeg;
+                    dwin->dirtyend = dirtyend;
+                    dwin->inunicode = inunicode;
+                    dwin->inorgx = inorgx;
+                    dwin->inorgy = inorgy;
+                    
+                    /* Restore grid content (lines array) */
+                    if (height > 0 && dwin->lines) {
+                        /* Restore each line */
+                        for (int line = 0; line < height; line++) {
+                            if (line < dwin->linessize) {
+                                tgline_t *tgline = &dwin->lines[line];
+                                
+                                /* Restore line properties */
+                                glui32 line_size, line_dirtybeg, line_dirtyend;
+                                if (!glkunix_unserialize_uint32(context, "tg_line_size", &line_size) ||
+                                    !glkunix_unserialize_uint32(context, "tg_line_dirtybeg", &line_dirtybeg) ||
+                                    !glkunix_unserialize_uint32(context, "tg_line_dirtyend", &line_dirtyend)) {
+                                    return 0;
+                                }
+                                
+                                tgline->size = line_size;
+                                tgline->dirtybeg = line_dirtybeg;
+                                tgline->dirtyend = line_dirtyend;
+                                
+                                /* Restore character data */
+                                glui32 chars_len;
+                                if (!glkunix_unserialize_uint32(context, NULL, &chars_len)) {
+                                    return 0;
+                                }
+                                
+                                if (chars_len > 0 && width > 0) {
+                                    /* Ensure line has character buffer */
+                                    if (!tgline->chars || tgline->size < width) {
+                                        if (tgline->chars) free(tgline->chars);
+                                        tgline->chars = malloc(width);
+                                        if (!tgline->chars) {
+                                            return 0;
+                                        }
+                                        tgline->size = width;
+                                    }
+                                    
+                                    if (fread(tgline->chars, 1, chars_len, context.file) != chars_len) {
+                                        return 0;
+                                    }
+                                    if (context.read_count) {
+                                        *(context.read_count) += chars_len;
+                                    }
+                                } else {
+                                    /* Empty line - consume the zero-length data */
+                                    /* No actual data to read since chars_len is 0 */
+                                }
+                                
+                                /* Restore style data */
+                                glui32 styles_len;
+                                if (!glkunix_unserialize_uint32(context, NULL, &styles_len)) {
+                                    return 0;
+                                }
+                                
+                                if (styles_len > 0 && width > 0) {
+                                    /* Ensure line has style buffer */
+                                    if (!tgline->styleplusses) {
+                                        tgline->styleplusses = malloc(width * sizeof(styleplus_t));
+                                        if (!tgline->styleplusses) {
+                                            return 0;
+                                        }
+                                    }
+                                    
+                                    if (fread(tgline->styleplusses, 1, styles_len, context.file) != styles_len) {
+                                        return 0;
+                                    }
+                                    if (context.read_count) {
+                                        *(context.read_count) += styles_len;
+                                    }
+                                } else {
+                                    /* Empty style data - consume the zero-length data */
+                                    /* No actual data to read since styles_len is 0 */
+                                }
+                            } else {
+                                /* Line index beyond allocated space - skip this line's data */
+                                glui32 line_size, line_dirtybeg, line_dirtyend;
+                                glui32 chars_len, styles_len;
+                                
+                                if (!glkunix_unserialize_uint32(context, "tg_line_size", &line_size) ||
+                                    !glkunix_unserialize_uint32(context, "tg_line_dirtybeg", &line_dirtybeg) ||
+                                    !glkunix_unserialize_uint32(context, "tg_line_dirtyend", &line_dirtyend) ||
+                                    !glkunix_unserialize_uint32(context, NULL, &chars_len) ||
+                                    !glkunix_unserialize_uint32(context, NULL, &styles_len)) {
+                                    return 0;
+                                }
+                                
+                                /* Skip character and style data */
+                                if (chars_len > 0) {
+                                    fseek(context.file, chars_len, SEEK_CUR);
+                                    if (context.read_count) {
+                                        *(context.read_count) += chars_len;
+                                    }
+                                }
+                                if (styles_len > 0) {
+                                    fseek(context.file, styles_len, SEEK_CUR);
+                                    if (context.read_count) {
+                                        *(context.read_count) += styles_len;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
             break;
             
         case wintype_Graphics:
@@ -1388,6 +1688,37 @@ void glkunix_autosave_cleanup(void)
         updatetag_table[i] = NULL;
     }
     /* Note: No need to reset next_update_tag since we now use deterministic tags */
+}
+
+/* Helper functions for creating serialization contexts from FILE pointers */
+glkunix_serialize_context_t glkunix_serialize_start(FILE *file)
+{
+    glkunix_serialize_context_t ctx;
+    ctx.file = file;
+    ctx.write_count = NULL; /* Count not tracked in simple version */
+    return ctx;
+}
+
+void glkunix_serialize_end(glkunix_serialize_context_t ctx)
+{
+    /* Flush file if needed */
+    if (ctx.file) {
+        fflush(ctx.file);
+    }
+}
+
+glkunix_unserialize_context_t glkunix_unserialize_start(FILE *file)
+{
+    glkunix_unserialize_context_t ctx;
+    ctx.file = file;
+    ctx.read_count = NULL; /* Count not tracked in simple version */
+    return ctx;
+}
+
+void glkunix_unserialize_end(glkunix_unserialize_context_t ctx)
+{
+    /* No cleanup needed for simple version */
+    (void)ctx; /* Suppress unused parameter warning */
 }
 
 /* Restore window hierarchy relationships after all windows are created */
