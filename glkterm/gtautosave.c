@@ -6,6 +6,10 @@
 #include "glk.h"
 #include "glkterm.h"
 #include "glkunix_autosave.h"
+#include "gtw_buf.h"
+#include "gtw_grid.h"
+#include "gtw_pair.h"
+#include "gtw_blnk.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -16,6 +20,11 @@ static int serialize_window_list(glkunix_serialize_context_t context);
 static int serialize_stream_list(glkunix_serialize_context_t context);
 static int serialize_fileref_list(glkunix_serialize_context_t context);
 static int serialize_window(glkunix_serialize_context_t context, window_t *win);
+static int serialize_window_data(glkunix_serialize_context_t context, window_t *win);
+static int serialize_textbuffer_data(glkunix_serialize_context_t context, window_textbuffer_t *dwin);
+static int serialize_textgrid_data(glkunix_serialize_context_t context, window_textgrid_t *dwin);
+static int serialize_pair_data(glkunix_serialize_context_t context, window_pair_t *dwin);
+static int serialize_blank_data(glkunix_serialize_context_t context, window_blank_t *dwin);
 static int serialize_stream(glkunix_serialize_context_t context, stream_t *str);
 static int serialize_fileref(glkunix_serialize_context_t context, fileref_t *fref);
 static glui32 gli_get_update_tag(void *obj, int objtype);
@@ -625,9 +634,139 @@ static int serialize_window(glkunix_serialize_context_t context, window_t *win)
         return 0;
     }
     
-    /* Note: Window-specific data (data pointer) will need type-specific serialization
-     * This is a TODO for later implementation */
+    /* Serialize window-specific data based on type */
+    if (!serialize_window_data(context, win)) {
+        return 0;
+    }
     
+    return 1;
+}
+
+/* Serialize window-specific data based on window type */
+static int serialize_window_data(glkunix_serialize_context_t context, window_t *win)
+{
+    if (!win || !win->data) {
+        /* No window data to serialize */
+        if (!glkunix_serialize_uint32(context, "has_data", 0)) {
+            return 0;
+        }
+        return 1;
+    }
+    
+    if (!glkunix_serialize_uint32(context, "has_data", 1)) {
+        return 0;
+    }
+    
+    switch (win->type) {
+    case wintype_TextBuffer:
+        return serialize_textbuffer_data(context, (window_textbuffer_t *)win->data);
+        
+    case wintype_TextGrid:
+        return serialize_textgrid_data(context, (window_textgrid_t *)win->data);
+        
+    case wintype_Pair:
+        return serialize_pair_data(context, (window_pair_t *)win->data);
+        
+    case wintype_Blank:
+        return serialize_blank_data(context, (window_blank_t *)win->data);
+        
+    case wintype_Graphics:
+        /* Graphics windows not fully supported in glkterm */
+        return 1;
+        
+    default:
+        /* Unknown window type */
+        return 0;
+    }
+}
+
+/* Serialize text buffer window data */
+static int serialize_textbuffer_data(glkunix_serialize_context_t context, window_textbuffer_t *dwin)
+{
+    if (!dwin) {
+        return 0;
+    }
+    
+    /* Serialize buffer dimensions and properties */
+    if (!glkunix_serialize_uint32(context, "tb_width", dwin->width) ||
+        !glkunix_serialize_uint32(context, "tb_height", dwin->height) ||
+        !glkunix_serialize_uint32(context, "tb_numchars", dwin->numchars) ||
+        !glkunix_serialize_uint32(context, "tb_dirtybeg", dwin->dirtybeg) ||
+        !glkunix_serialize_uint32(context, "tb_dirtyend", dwin->dirtyend) ||
+        !glkunix_serialize_uint32(context, "tb_dirtydelta", dwin->dirtydelta)) {
+        return 0;
+    }
+    
+    /* Serialize buffer content */
+    if (dwin->chars && dwin->numchars > 0) {
+        if (!glkunix_serialize_buffer(context, "tb_chars", (unsigned char*)dwin->chars, dwin->numchars)) {
+            return 0;
+        }
+    } else {
+        if (!glkunix_serialize_buffer(context, "tb_chars", NULL, 0)) {
+            return 0;
+        }
+    }
+    
+    return 1;
+}
+
+/* Serialize text grid window data */
+static int serialize_textgrid_data(glkunix_serialize_context_t context, window_textgrid_t *dwin)
+{
+    if (!dwin) {
+        return 0;
+    }
+    
+    /* Serialize grid dimensions and cursor position */
+    if (!glkunix_serialize_uint32(context, "tg_width", dwin->width) ||
+        !glkunix_serialize_uint32(context, "tg_height", dwin->height) ||
+        !glkunix_serialize_uint32(context, "tg_curx", dwin->curx) ||
+        !glkunix_serialize_uint32(context, "tg_cury", dwin->cury) ||
+        !glkunix_serialize_uint32(context, "tg_dirtybeg", dwin->dirtybeg) ||
+        !glkunix_serialize_uint32(context, "tg_dirtyend", dwin->dirtyend)) {
+        return 0;
+    }
+    
+    /* Serialize input state */
+    if (!glkunix_serialize_uint32(context, "tg_inunicode", dwin->inunicode) ||
+        !glkunix_serialize_uint32(context, "tg_inorgx", dwin->inorgx) ||
+        !glkunix_serialize_uint32(context, "tg_inorgy", dwin->inorgy)) {
+        return 0;
+    }
+    
+    /* Note: For now, we skip serializing the actual grid content (lines array)
+     * This would require more complex serialization of the tgline_t structures
+     * and their character/style data. This is a TODO for full implementation. */
+    
+    return 1;
+}
+
+/* Serialize pair window data */
+static int serialize_pair_data(glkunix_serialize_context_t context, window_pair_t *dwin)
+{
+    if (!dwin) {
+        return 0;
+    }
+    
+    /* Serialize pair window properties */
+    glui32 child1_tag = dwin->child1 ? gli_get_update_tag((void*)dwin->child1, OBJTYPE_WINDOW) : 0;
+    glui32 child2_tag = dwin->child2 ? gli_get_update_tag((void*)dwin->child2, OBJTYPE_WINDOW) : 0;
+    
+    if (!glkunix_serialize_uint32(context, "pair_child1_tag", child1_tag) ||
+        !glkunix_serialize_uint32(context, "pair_child2_tag", child2_tag) ||
+        !glkunix_serialize_uint32(context, "pair_splitpos", dwin->splitpos) ||
+        !glkunix_serialize_uint32(context, "pair_splitwidth", dwin->splitwidth)) {
+        return 0;
+    }
+    
+    return 1;
+}
+
+/* Serialize blank window data */
+static int serialize_blank_data(glkunix_serialize_context_t context, window_blank_t *dwin)
+{
+    /* Blank windows have no data to serialize */
     return 1;
 }
 

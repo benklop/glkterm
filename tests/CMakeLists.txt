@@ -63,11 +63,35 @@ add_executable(test_serialization
 target_link_libraries(test_serialization unity glkterm_test)
 target_include_directories(test_serialization PRIVATE ../glkterm)
 
+# Window serialization tests
+add_executable(test_window_serialization
+    test_window_serialization.c
+)
+target_link_libraries(test_window_serialization unity glkterm_test)
+target_include_directories(test_window_serialization PRIVATE ../glkterm)
+
+# Stream serialization tests
+add_executable(test_stream_serialization
+    test_stream_serialization.c
+)
+target_link_libraries(test_stream_serialization unity glkterm_test)
+target_include_directories(test_stream_serialization PRIVATE ../glkterm)
+
+# Fileref serialization tests
+add_executable(test_fileref_serialization
+    test_fileref_serialization.c
+)
+target_link_libraries(test_fileref_serialization unity glkterm_test)
+target_include_directories(test_fileref_serialization PRIVATE ../glkterm)
+
 # Test targets
 add_custom_target(check
     COMMAND test_updatetags
     COMMAND test_serialization
-    DEPENDS test_updatetags test_serialization
+    COMMAND test_window_serialization
+    COMMAND test_stream_serialization
+    COMMAND test_fileref_serialization
+    DEPENDS test_updatetags test_serialization test_window_serialization test_stream_serialization test_fileref_serialization
     COMMENT "Running unit tests"
 )
 
@@ -87,3 +111,6 @@ add_custom_target(test-serialization
 # Test registration
 add_test(NAME UpdateTags COMMAND test_updatetags)
 add_test(NAME Serialization COMMAND test_serialization)
+add_test(NAME WindowSerialization COMMAND test_window_serialization)
+add_test(NAME StreamSerialization COMMAND test_stream_serialization)
+add_test(NAME FilerefSerialization COMMAND test_fileref_serialization)
