@@ -44,6 +44,13 @@ Implementation of autosave/autorestore functionality in glkterm library to suppo
 - [x] **Object Type System**: Defined constants for different GLK object types
 - [x] **Backward Compatibility**: Legacy functions preserved for existing code
 
+### 6. **NEW: Unit Testing Framework** 🆕
+- [x] **Unity Integration**: Lightweight C testing framework (v2.6.0) set up
+- [x] **Update Tag Tests**: 6 comprehensive tests for deterministic tag system
+- [x] **Serialization Tests**: 7 tests covering endian-safety and error handling  
+- [x] **CMake Integration**: Both `make check` and `ctest` support
+- [x] **CI Ready**: All tests passing, suitable for continuous integration
+
 ---
 
 ## ⚠️ STUB IMPLEMENTATIONS (Critical Gaps)

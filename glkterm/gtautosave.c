@@ -262,6 +262,10 @@ void glkunix_fileref_set_dispatch_rock(frefid_t fref, gidispatch_rock_t rock)
 /* Context serialization functions */
 int glkunix_serialize_uint32(glkunix_serialize_context_t ctx, char *id, glui32 value)
 {
+    if (!ctx.file) {
+        return 0;
+    }
+    
     /* Write in big-endian format for cross-platform compatibility */
     unsigned char bytes[4];
     bytes[0] = (value >> 24) & 0xFF;
@@ -280,6 +284,10 @@ int glkunix_serialize_uint32(glkunix_serialize_context_t ctx, char *id, glui32 v
 
 int glkunix_unserialize_uint32(glkunix_unserialize_context_t ctx, char *id, glui32 *value)
 {
+    if (!ctx.file || !value) {
+        return 0;
+    }
+    
     unsigned char bytes[4];
     if (fread(bytes, 4, 1, ctx.file) != 1) {
         return 0;

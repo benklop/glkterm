@@ -266,3 +266,10 @@ write_basic_package_version_file(
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/glkterm-config-version.cmake
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/glkterm
 )
+
+# Include tests subdirectory
+option(BUILD_TESTS "Build unit tests" ON)
+if(BUILD_TESTS)
+    enable_testing()
+    add_subdirectory(tests)
+endif()
