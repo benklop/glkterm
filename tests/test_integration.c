@@ -51,7 +51,7 @@ void test_full_file_cycle(void) {
     
     /* Create serialize context */
     glkunix_serialize_context_t serialize_ctx = glkunix_serialize_start(save_file);
-    TEST_ASSERT_NOT_NULL(serialize_ctx);
+    TEST_ASSERT_NOT_NULL(serialize_ctx.file);
     
     /* Perform serialization */
     int result = glkunix_serialize_library_state(serialize_ctx);
@@ -70,7 +70,7 @@ void test_full_file_cycle(void) {
     
     /* Create unserialize context */
     glkunix_unserialize_context_t unserialize_ctx = glkunix_unserialize_start(restore_file);
-    TEST_ASSERT_NOT_NULL(unserialize_ctx);
+    TEST_ASSERT_NOT_NULL(unserialize_ctx.file);
     
     /* Perform unserialization */
     result = glkunix_unserialize_library_state(unserialize_ctx);
@@ -95,7 +95,7 @@ void test_file_error_conditions(void) {
     bad_file = fopen("/dev/null", "r");  /* Read-only for write operation */
     serialize_ctx = glkunix_serialize_start(bad_file);
     /* Should handle gracefully - implementation-dependent */
-    if (serialize_ctx) {
+    if (serialize_ctx.file) {
         glkunix_serialize_end(serialize_ctx);
     }
     fclose(bad_file);
@@ -107,7 +107,7 @@ void test_file_error_conditions(void) {
     bad_file = fopen(temp_autosave_file, "rb");
     unserialize_ctx = glkunix_unserialize_start(bad_file);
     
-    if (unserialize_ctx) {
+    if (unserialize_ctx.file) {
         int result = glkunix_unserialize_library_state(unserialize_ctx);
         /* Should fail gracefully with empty file */
         TEST_ASSERT_FALSE(result);
@@ -257,6 +257,74 @@ void test_endian_safety(void) {
     /* Implementation uses big-endian format, so this should be safe */
 }
 
+/* Test .glkstate file naming convention */
+void test_glkstate_naming_convention(void) {
+    int result;
+    glkunix_library_state_t state;
+    
+    /* Create minimal GLK state */
+    winid_t win = glk_window_open(NULL, 0, 0, wintype_TextBuffer, 42);
+    TEST_ASSERT_NOT_NULL(win);
+    
+    /* Test save with .glkstate naming */
+    result = glkunix_save_game_state("testgame");
+    TEST_ASSERT_EQUAL(0, result);
+    
+    /* Verify .glkstate file was created */
+    TEST_ASSERT_EQUAL(0, access("testgame.glkstate", F_OK));
+    
+    /* Close window to clear state */
+    glk_window_close(win, NULL);
+    
+    /* Test load with .glkstate naming */
+    state = glkunix_load_game_state("testgame");
+    TEST_ASSERT_NOT_NULL(state);
+    
+    /* Update from loaded state */
+    result = glkunix_update_from_library_state(state);
+    TEST_ASSERT_EQUAL(0, result);
+    
+    /* Clean up */
+    glkunix_library_state_free(state);
+    unlink("testgame.glkstate");
+}
+
+/* Test multiple .glkstate files for different games */
+void test_multiple_glkstate_files(void) {
+    int result;
+    
+    /* Create minimal state */
+    winid_t win = glk_window_open(NULL, 0, 0, wintype_TextBuffer, 1);
+    
+    /* Save state for multiple game names */
+    result = glkunix_save_game_state("game1");
+    TEST_ASSERT_EQUAL(0, result);
+    
+    result = glkunix_save_game_state("game2");
+    TEST_ASSERT_EQUAL(0, result);
+    
+    /* Verify both .glkstate files exist */
+    TEST_ASSERT_EQUAL(0, access("game1.glkstate", F_OK));
+    TEST_ASSERT_EQUAL(0, access("game2.glkstate", F_OK));
+    
+    /* Clean up */
+    glk_window_close(win, NULL);
+    unlink("game1.glkstate");
+    unlink("game2.glkstate");
+}
+
+/* Test loading non-existent .glkstate file */
+void test_load_nonexistent_glkstate(void) {
+    glkunix_library_state_t state;
+    
+    /* Ensure file doesn't exist */
+    unlink("nonexistent.glkstate");
+    
+    /* Try to load - should return NULL */
+    state = glkunix_load_game_state("nonexistent");
+    TEST_ASSERT_NULL(state);
+}
+
 int main(void) {
     UNITY_BEGIN();
     
@@ -266,6 +334,9 @@ int main(void) {
     RUN_TEST(test_memory_stream_preservation);
     RUN_TEST(test_complex_hierarchy_file_roundtrip);
     RUN_TEST(test_endian_safety);
+    RUN_TEST(test_glkstate_naming_convention);
+    RUN_TEST(test_multiple_glkstate_files);
+    RUN_TEST(test_load_nonexistent_glkstate);
     
     return UNITY_END();
 }

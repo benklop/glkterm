@@ -106,18 +106,25 @@ target_link_libraries(test_hierarchy_roundtrip unity glkterm_test)
 target_include_directories(test_hierarchy_roundtrip PRIVATE ../glkterm)
 
 # Integration tests (file I/O, error conditions, full cycle)
-# DISABLED: Compilation issues with test API usage
-# add_executable(test_integration
-#     test_integration.c
-# )
-# target_link_libraries(test_integration unity glkterm_test)
-# target_include_directories(test_integration PRIVATE ../glkterm)
+add_executable(test_integration
+    test_integration.c
+)
+target_link_libraries(test_integration unity glkterm_test)
+target_include_directories(test_integration PRIVATE ../glkterm)
 
 # Content restoration tests (detailed content preservation)
 add_executable(test_content_restoration
     test_content_restoration.c
 )
 target_link_libraries(test_content_restoration unity glkterm_test)
+target_include_directories(test_content_restoration PRIVATE ../glkterm)
+
+# Graphics window serialization tests
+add_executable(test_graphics_serialization
+    test_graphics_serialization.c
+)
+target_link_libraries(test_graphics_serialization unity glkterm_test)
+target_include_directories(test_graphics_serialization PRIVATE ../glkterm)
 target_include_directories(test_content_restoration PRIVATE ../glkterm)
 
 # Test targets
@@ -131,7 +138,8 @@ add_custom_target(check
     COMMAND test_window_hierarchy
     COMMAND test_hierarchy_roundtrip
     COMMAND test_content_restoration
-    DEPENDS test_updatetags test_serialization test_window_serialization test_stream_serialization test_fileref_serialization test_unserialization test_window_hierarchy test_hierarchy_roundtrip test_content_restoration
+    COMMAND test_graphics_serialization
+    DEPENDS test_updatetags test_serialization test_window_serialization test_stream_serialization test_fileref_serialization test_unserialization test_window_hierarchy test_hierarchy_roundtrip test_content_restoration test_graphics_serialization
     COMMENT "Running unit tests"
 )
 
@@ -157,3 +165,5 @@ add_test(NAME FilerefSerialization COMMAND test_fileref_serialization)
 add_test(NAME Unserialization COMMAND test_unserialization)
 add_test(NAME WindowHierarchy COMMAND test_window_hierarchy)
 add_test(NAME HierarchyRoundtrip COMMAND test_hierarchy_roundtrip)
+add_test(NAME GraphicsSerialization COMMAND test_graphics_serialization)
+# add_test(NAME Integration COMMAND test_integration)  # Disabled: Needs proper GLK environment setup

@@ -67,7 +67,6 @@ extern void glkunix_set_autosave_tag(glui32 tag);
 extern int glkunix_serialize_library_state(glkunix_serialize_context_t context);
 extern int glkunix_unserialize_library_state(glkunix_unserialize_context_t context);
 extern glui32 glkunix_serialize_object_tag(glkunix_serialize_context_t context, void *object);
-extern int glkunix_unserialize_object(glkunix_unserialize_context_t context, glui32 tag, void *object);
 
 /* Other required functions */
 extern int giblorb_unset_resource_map(void);
@@ -80,5 +79,9 @@ extern glkunix_serialize_context_t glkunix_serialize_start(FILE *file);
 extern void glkunix_serialize_end(glkunix_serialize_context_t ctx);
 extern glkunix_unserialize_context_t glkunix_unserialize_start(FILE *file);
 extern void glkunix_unserialize_end(glkunix_unserialize_context_t ctx);
+
+/* Convenience functions for .glkstate file handling */
+extern int glkunix_save_game_state(const char *gamename);
+extern glkunix_library_state_t glkunix_load_game_state(const char *gamename);
 
 #endif /* GLKUNIX_AUTOSAVE_H */
