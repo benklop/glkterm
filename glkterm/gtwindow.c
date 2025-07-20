@@ -1383,3 +1383,9 @@ void glk_cancel_hyperlink_event(winid_t win)
 }
 
 #endif /* GLK_MODULE_HYPERLINKS */
+
+/* Accessor function for autosave functionality */
+window_t *glkunix_get_windowlist(void)
+{
+    return gli_windowlist;
+}

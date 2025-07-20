@@ -1769,3 +1769,9 @@ void garglk_set_reversevideo_stream(strid_t str, glui32 reverse)
 }
 
 #endif /* GLK_MODULE_GARGLKTEXT */
+
+/* Accessor function for autosave functionality */
+stream_t *glkunix_get_streamlist(void)
+{
+    return gli_streamlist;
+}

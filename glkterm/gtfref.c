@@ -416,3 +416,9 @@ void glkunix_set_base_file(char *filename)
     strcat(lastdataname, gli_suffix_for_usage(fileusage_Data));
 }
 
+
+/* Accessor function for autosave functionality */
+fileref_t *glkunix_get_filereflist(void)
+{
+    return gli_filereflist;
+}

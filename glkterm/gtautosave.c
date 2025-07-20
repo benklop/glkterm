@@ -11,6 +11,28 @@
 #include <string.h>
 #include <stdint.h>
 
+/* Forward declarations for internal serialization functions */
+static int serialize_window_list(glkunix_serialize_context_t context);
+static int serialize_stream_list(glkunix_serialize_context_t context);
+static int serialize_fileref_list(glkunix_serialize_context_t context);
+static int serialize_window(glkunix_serialize_context_t context, window_t *win);
+static int serialize_stream(glkunix_serialize_context_t context, stream_t *str);
+static int serialize_fileref(glkunix_serialize_context_t context, fileref_t *fref);
+static glui32 gli_get_update_tag(void *obj, int objtype);
+
+/* Forward declarations for unserialization functions */
+static int unserialize_window_list(glkunix_unserialize_context_t context);
+static int unserialize_stream_list(glkunix_unserialize_context_t context);
+static int unserialize_fileref_list(glkunix_unserialize_context_t context);
+
+/* Accessor for current stream (since it's static in gtstream.c) */
+extern stream_t *glk_stream_get_current(void);
+
+/* Accessor functions for static object lists (internal only) */
+extern window_t *glkunix_get_windowlist(void);
+extern stream_t *glkunix_get_streamlist(void); 
+extern fileref_t *glkunix_get_filereflist(void);
+
 /* Global state variables 
  * NOTE: These are not thread-safe by design, consistent with the rest of glkterm.
  * The library assumes single-threaded usage except for audio callbacks.
@@ -174,9 +196,38 @@ void glkunix_set_autosave_tag(glui32 tag)
 /* Library state serialization functions */
 int glkunix_serialize_library_state(glkunix_serialize_context_t context)
 {
-    /* TODO: Serialize actual GLK library state */
-    /* For now, just write a placeholder */
-    return glkunix_serialize_uint32(context, "glk_state_version", 1);
+    /* Serialize GLK library state in order:
+     * 1. Version number
+     * 2. Global state (root window, focus window, current stream)
+     * 3. Window list and hierarchy
+     * 4. Stream list
+     * 5. Fileref list
+     */
+    
+    if (!glkunix_serialize_uint32(context, "glk_state_version", 1)) {
+        return 0;
+    }
+    
+    /* Global state pointers (as update tags) */
+    glui32 root_tag = gli_rootwin ? gli_get_update_tag((void*)gli_rootwin, OBJTYPE_WINDOW) : 0;
+    glui32 focus_tag = gli_focuswin ? gli_get_update_tag((void*)gli_focuswin, OBJTYPE_WINDOW) : 0;
+    stream_t *current_stream = glk_stream_get_current();
+    glui32 current_stream_tag = current_stream ? gli_get_update_tag((void*)current_stream, OBJTYPE_STREAM) : 0;
+    
+    if (!glkunix_serialize_uint32(context, "root_window_tag", root_tag) ||
+        !glkunix_serialize_uint32(context, "focus_window_tag", focus_tag) ||
+        !glkunix_serialize_uint32(context, "current_stream_tag", current_stream_tag)) {
+        return 0;
+    }
+    
+    /* Serialize object lists */
+    if (!serialize_window_list(context) ||
+        !serialize_stream_list(context) ||
+        !serialize_fileref_list(context)) {
+        return 0;
+    }
+    
+    return 1;
 }
 
 int glkunix_unserialize_library_state(glkunix_unserialize_context_t context)
@@ -221,6 +272,23 @@ glui32 glkunix_fileref_get_updatetag(frefid_t fref)
 {
     if (!fref) return 0;
     return get_or_create_updatetag_for_object(fref, fref->rock, OBJTYPE_FILEREF);
+}
+
+/* Internal dispatcher function for getting update tags by object type */
+static glui32 gli_get_update_tag(void *obj, int objtype)
+{
+    if (!obj) return 0;
+    
+    switch (objtype) {
+        case OBJTYPE_WINDOW:
+            return glkunix_window_get_updatetag((winid_t)obj);
+        case OBJTYPE_STREAM:
+            return glkunix_stream_get_updatetag((strid_t)obj);
+        case OBJTYPE_FILEREF:
+            return glkunix_fileref_get_updatetag((frefid_t)obj);
+        default:
+            return 0;
+    }
 }
 
 winid_t glkunix_window_find_by_updatetag(glui32 tag)
@@ -473,6 +541,255 @@ void glkunix_library_state_free(glkunix_library_state_t library_state)
 
 /* Required by some autosave implementations */
 int giblorb_unset_resource_map(void) {
+    return 1;
+}
+
+/* Window list serialization implementation */
+static int serialize_window_list(glkunix_serialize_context_t context)
+{
+    /* Count windows first */
+    glui32 count = 0;
+    window_t *windowlist = glkunix_get_windowlist();
+    window_t *win;
+    
+    for (win = windowlist; win; win = win->next) {
+        count++;
+    }
+    
+    if (!glkunix_serialize_uint32(context, "window_count", count)) {
+        return 0;
+    }
+    
+    /* Serialize each window */
+    for (win = windowlist; win; win = win->next) {
+        if (!serialize_window(context, win)) {
+            return 0;
+        }
+    }
+    
+    return 1;
+}
+
+static int serialize_window(glkunix_serialize_context_t context, window_t *win)
+{
+    if (!win) {
+        return 0;
+    }
+    
+    /* Basic window properties */
+    glui32 update_tag = gli_get_update_tag((void*)win, OBJTYPE_WINDOW);
+    if (!glkunix_serialize_uint32(context, "window_tag", update_tag) ||
+        !glkunix_serialize_uint32(context, "window_type", win->type) ||
+        !glkunix_serialize_uint32(context, "window_rock", win->rock)) {
+        return 0;
+    }
+    
+    /* Window relationships */
+    glui32 parent_tag = win->parent ? gli_get_update_tag((void*)win->parent, OBJTYPE_WINDOW) : 0;
+    glui32 stream_tag = win->str ? gli_get_update_tag((void*)win->str, OBJTYPE_STREAM) : 0;
+    glui32 echo_stream_tag = win->echostr ? gli_get_update_tag((void*)win->echostr, OBJTYPE_STREAM) : 0;
+    
+    if (!glkunix_serialize_uint32(context, "parent_tag", parent_tag) ||
+        !glkunix_serialize_uint32(context, "stream_tag", stream_tag) ||
+        !glkunix_serialize_uint32(context, "echo_stream_tag", echo_stream_tag)) {
+        return 0;
+    }
+    
+    /* Bounding box */
+    if (!glkunix_serialize_uint32(context, "bbox_left", win->bbox.left) ||
+        !glkunix_serialize_uint32(context, "bbox_top", win->bbox.top) ||
+        !glkunix_serialize_uint32(context, "bbox_right", win->bbox.right) ||
+        !glkunix_serialize_uint32(context, "bbox_bottom", win->bbox.bottom)) {
+        return 0;
+    }
+    
+    /* Input request states */
+    if (!glkunix_serialize_uint32(context, "line_request", win->line_request) ||
+        !glkunix_serialize_uint32(context, "line_request_uni", win->line_request_uni) ||
+        !glkunix_serialize_uint32(context, "char_request", win->char_request) ||
+        !glkunix_serialize_uint32(context, "char_request_uni", win->char_request_uni)) {
+        return 0;
+    }
+    
+    /* Line input settings */
+    if (!glkunix_serialize_uint32(context, "echo_line_input", win->echo_line_input) ||
+        !glkunix_serialize_uint32(context, "terminate_line_input", win->terminate_line_input)) {
+        return 0;
+    }
+    
+    /* Current style */
+    if (!glkunix_serialize_uint32(context, "style", win->styleplus.style) ||
+        !glkunix_serialize_uint32(context, "inline_fgcolor", (glui32)win->styleplus.inline_fgcolor) ||
+        !glkunix_serialize_uint32(context, "inline_bgcolor", (glui32)win->styleplus.inline_bgcolor) ||
+        !glkunix_serialize_uint32(context, "inline_reverse", (glui32)win->styleplus.inline_reverse)) {
+        return 0;
+    }
+    
+    /* Note: Window-specific data (data pointer) will need type-specific serialization
+     * This is a TODO for later implementation */
+    
+    return 1;
+}
+
+static int serialize_stream_list(glkunix_serialize_context_t context)
+{
+    /* Count streams first */
+    glui32 count = 0;
+    stream_t *streamlist = glkunix_get_streamlist();
+    stream_t *str;
+    
+    for (str = streamlist; str; str = str->next) {
+        count++;
+    }
+    
+    if (!glkunix_serialize_uint32(context, "stream_count", count)) {
+        return 0;
+    }
+    
+    /* Serialize each stream */
+    for (str = streamlist; str; str = str->next) {
+        if (!serialize_stream(context, str)) {
+            return 0;
+        }
+    }
+    
+    return 1;
+}
+
+static int serialize_stream(glkunix_serialize_context_t context, stream_t *str)
+{
+    if (!str) {
+        return 0;
+    }
+    
+    /* Basic stream properties */
+    glui32 update_tag = gli_get_update_tag((void*)str, OBJTYPE_STREAM);
+    if (!glkunix_serialize_uint32(context, "stream_tag", update_tag) ||
+        !glkunix_serialize_uint32(context, "stream_type", str->type) ||
+        !glkunix_serialize_uint32(context, "stream_rock", str->rock)) {
+        return 0;
+    }
+    
+    /* Stream state */
+    if (!glkunix_serialize_uint32(context, "unicode", str->unicode) ||
+        !glkunix_serialize_uint32(context, "readable", str->readable) ||
+        !glkunix_serialize_uint32(context, "writable", str->writable) ||
+        !glkunix_serialize_uint32(context, "readcount", str->readcount) ||
+        !glkunix_serialize_uint32(context, "writecount", str->writecount)) {
+        return 0;
+    }
+    
+    /* Type-specific data */
+    switch (str->type) {
+        case strtype_Window:
+            /* Window stream - store associated window tag */
+            {
+                glui32 win_tag = str->win ? gli_get_update_tag((void*)str->win, OBJTYPE_WINDOW) : 0;
+                if (!glkunix_serialize_uint32(context, "window_tag", win_tag)) {
+                    return 0;
+                }
+            }
+            break;
+            
+        case strtype_File:
+            /* File stream - store filename and position */
+            {
+                const char *filename = str->filename ? str->filename : "";
+                if (!glkunix_serialize_buffer(context, "filename", (void*)filename, strlen(filename)) ||
+                    !glkunix_serialize_uint32(context, "lastop", str->lastop)) {
+                    return 0;
+                }
+                /* Note: File position will be automatically restored when file is reopened */
+            }
+            break;
+            
+        case strtype_Memory:
+            /* Memory stream - we'll need to store buffer contents for read-only streams */
+            if (!glkunix_serialize_uint32(context, "buflen", str->buflen) ||
+                !glkunix_serialize_uint32(context, "isbinary", str->isbinary)) {
+                return 0;
+            }
+            
+            /* Store current buffer position offsets */
+            if (str->unicode) {
+                glui32 ptr_offset = str->ubufptr ? (str->ubufptr - str->ubuf) : 0;
+                glui32 end_offset = str->ubufend ? (str->ubufend - str->ubuf) : 0;
+                glui32 eof_offset = str->ubufeof ? (str->ubufeof - str->ubuf) : 0;
+                if (!glkunix_serialize_uint32(context, "ubuf_ptr_offset", ptr_offset) ||
+                    !glkunix_serialize_uint32(context, "ubuf_end_offset", end_offset) ||
+                    !glkunix_serialize_uint32(context, "ubuf_eof_offset", eof_offset)) {
+                    return 0;
+                }
+            } else {
+                glui32 ptr_offset = str->bufptr ? (str->bufptr - str->buf) : 0;
+                glui32 end_offset = str->bufend ? (str->bufend - str->buf) : 0;
+                glui32 eof_offset = str->bufeof ? (str->bufeof - str->buf) : 0;
+                if (!glkunix_serialize_uint32(context, "buf_ptr_offset", ptr_offset) ||
+                    !glkunix_serialize_uint32(context, "buf_end_offset", end_offset) ||
+                    !glkunix_serialize_uint32(context, "buf_eof_offset", eof_offset)) {
+                    return 0;
+                }
+            }
+            break;
+            
+        case strtype_Resource:
+            /* Resource stream */
+            if (!glkunix_serialize_uint32(context, "isbinary", str->isbinary)) {
+                return 0;
+            }
+            /* Note: Resource streams are read-only and managed by gi_blorb.c */
+            break;
+    }
+    
+    return 1;
+}
+
+static int serialize_fileref_list(glkunix_serialize_context_t context)
+{
+    /* Count filerefs first */
+    glui32 count = 0;
+    fileref_t *filereflist = glkunix_get_filereflist();
+    fileref_t *fref;
+    
+    for (fref = filereflist; fref; fref = fref->next) {
+        count++;
+    }
+    
+    if (!glkunix_serialize_uint32(context, "fileref_count", count)) {
+        return 0;
+    }
+    
+    /* Serialize each fileref */
+    for (fref = filereflist; fref; fref = fref->next) {
+        if (!serialize_fileref(context, fref)) {
+            return 0;
+        }
+    }
+    
+    return 1;
+}
+
+static int serialize_fileref(glkunix_serialize_context_t context, fileref_t *fref)
+{
+    if (!fref) {
+        return 0;
+    }
+    
+    /* Basic fileref properties */
+    glui32 update_tag = gli_get_update_tag((void*)fref, OBJTYPE_FILEREF);
+    if (!glkunix_serialize_uint32(context, "fileref_tag", update_tag) ||
+        !glkunix_serialize_uint32(context, "fileref_rock", fref->rock)) {
+        return 0;
+    }
+    
+    /* File properties */
+    const char *filename = fref->filename ? fref->filename : "";
+    if (!glkunix_serialize_buffer(context, "filename", (void*)filename, strlen(filename)) ||
+        !glkunix_serialize_uint32(context, "filetype", fref->filetype) ||
+        !glkunix_serialize_uint32(context, "textmode", fref->textmode)) {
+        return 0;
+    }
+    
     return 1;
 }
 
