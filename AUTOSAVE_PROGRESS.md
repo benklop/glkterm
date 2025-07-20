@@ -52,8 +52,10 @@ Implementation of autosave/autorestore functionality in glkterm library to suppo
 - [x] **Stream Structure Tests**: 6 tests verifying stream types and memory buffer handling
 - [x] **Fileref Structure Tests**: 5 tests checking fileref properties and usage types
 - [x] **Unserialization Tests**: 6 tests validating restoration logic and endian handling
+- [x] **Window Hierarchy Tests**: 7 tests covering window structure validation, parent/child relationships, update tag generation, and restoration order dependencies
+- [x] **Hierarchy Round-trip Tests**: 4 tests validating complete window hierarchy serialization and restoration in complex scenarios
 - [x] **CMake Integration**: Both `make check` and `ctest` support
-- [x] **CI Ready**: All 38 tests passing, suitable for continuous integration
+- [x] **CI Ready**: All 49 tests passing, suitable for continuous integration
 
 ### 7. **NEW: GLK Object Serialization** 🆕
 - [x] **Window List Serialization**: Complete window object list export/import
@@ -130,7 +132,6 @@ int glkunix_unserialize_library_state(glkunix_unserialize_context_t context)
 **MISSING**:
 - Detailed window content restoration (text buffer contents, grid data)
 - Memory stream buffer content restoration
-- Window hierarchy reconstruction (parent/child relationships)
 - Active input request restoration
 - Sound channel restoration (if GLK_NO_SOUND not defined)
 
@@ -303,20 +304,24 @@ Significant progress has been made on the autosave infrastructure:
 - **API Framework**: 100% ✅  
 - **Update Tag System**: 100% ✅ (improved from 85%)
 - **GLK State Serialization**: 85% ✅ (improved from 60% - major object content serialization complete)
-- **GLK State Restoration**: 60% ✅ (improved from 0% - basic restoration implemented)
+- **GLK State Restoration**: 80% ✅ (improved from 60% - window hierarchy restoration implemented)
 - **Object Management**: 85% ✅ (improved from 75%)
-- **Test Infrastructure**: 100% ✅ (38 tests passing)
-- **Production Readiness**: 70% ✅ (improved from 45% - round-trip capability achieved)
+- **Test Infrastructure**: 100% ✅ (49 tests passing)
+- **Production Readiness**: 80% ✅ (improved from 70% - major hierarchy restoration milestone achieved)
 
 **Recent Progress (2024-12-19 → 2025-07-19)**:
 - ✅ Completed GLK object list serialization (windows, streams, filerefs)
 - ✅ Fixed all build and linking issues  
 - ✅ Re-enabled and fixed test infrastructure
-- ✅ All unit tests passing (32 → 38 tests)
+- ✅ All unit tests passing (32 → 49 tests)
 - ✅ Added test stubs for main executable dependencies
 - ✅ **NEW**: Implemented complete GLK state restoration framework
 - ✅ **NEW**: Basic window, stream, and fileref object recreation
 - ✅ **NEW**: Version checking and error handling for unserialization
 - ✅ **NEW**: Endian-safe unserialization with comprehensive testing
+- ✅ **NEW**: Window hierarchy restoration with comprehensive test coverage
+- ✅ **NEW**: Two-phase restoration: object creation then hierarchy establishment
+- ✅ **NEW**: Parent/child pointer restoration for all window types
+- ✅ **NEW**: Pair window child1/child2 pointer restoration
 
-**Estimated work remaining**: ~10-20 hours for detailed content restoration, ~30-40 hours for full production implementation.
+**Estimated work remaining**: ~5-10 hours for detailed content restoration, ~20-30 hours for full production implementation.

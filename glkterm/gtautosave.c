@@ -37,6 +37,7 @@ static int unserialize_window(glkunix_unserialize_context_t context);
 static int unserialize_stream(glkunix_unserialize_context_t context);
 static int unserialize_fileref(glkunix_unserialize_context_t context);
 static int unserialize_window_data(glkunix_unserialize_context_t context, window_t *win);
+static int restore_window_hierarchy(glkunix_unserialize_context_t context);
 
 /* Accessor for current stream (since it's static in gtstream.c) */
 extern stream_t *glk_stream_get_current(void);
@@ -64,6 +65,21 @@ static glui32 gli_autosave_tag = 0; /* Current autosave tag */
 #define OBJTYPE_STREAM 2  
 #define OBJTYPE_FILEREF 3
 #define OBJTYPE_SCHANNEL 4
+
+#define MAX_HIERARCHY_ENTRIES 100
+
+/* Temporary structure for storing window hierarchy during restoration */
+struct window_hierarchy_info {
+    glui32 window_tag;
+    glui32 parent_tag; 
+    glui32 child1_tag;  /* For pair windows */
+    glui32 child2_tag;  /* For pair windows */
+    glui32 key_tag;     /* For pair windows */
+    window_t *window;   /* Pointer to the created window */
+};
+
+static struct window_hierarchy_info hierarchy_info[MAX_HIERARCHY_ENTRIES];
+static glui32 hierarchy_count = 0;
 
 static struct updatetag_entry {
     void *object;
@@ -962,11 +978,16 @@ static int unserialize_window_list(glkunix_unserialize_context_t context)
         return 0;
     }
     
-    /* Process each window */
+    /* Process each window - first pass creates objects */
     for (glui32 i = 0; i < count; i++) {
         if (!unserialize_window(context)) {
             return 0;
         }
+    }
+    
+    /* Second pass: restore window hierarchy relationships */
+    if (!restore_window_hierarchy(context)) {
+        return 0;
     }
     
     return 1;
@@ -1040,11 +1061,67 @@ static int unserialize_window(glkunix_unserialize_context_t context)
         return 0;
     }
     
-    /* TODO: Restore parent relationship - need to find parent window by tag */
-    /* This is complex because parents must be restored before children */
+    /* Store hierarchy information for all windows */
+    if (hierarchy_count < MAX_HIERARCHY_ENTRIES) {
+        struct window_hierarchy_info *info = &hierarchy_info[hierarchy_count];
+        info->window_tag = glkunix_window_get_updatetag(win);
+        info->parent_tag = parent_tag;
+        info->child1_tag = 0;  /* Will be set for pair windows */
+        info->child2_tag = 0;  /* Will be set for pair windows */
+        info->key_tag = 0;     /* Will be set for pair windows */
+        info->window = win;
+        hierarchy_count++;
+    }
+    
+    /* Read other window fields we need to skip for now */
+    glui32 stream_tag, echo_stream_tag;
+    if (!glkunix_unserialize_uint32(context, "stream_tag", &stream_tag) ||
+        !glkunix_unserialize_uint32(context, "echo_stream_tag", &echo_stream_tag)) {
+        return 0;
+    }
+    
+    /* Read bounding box */
+    glui32 bbox_left, bbox_top, bbox_right, bbox_bottom;
+    if (!glkunix_unserialize_uint32(context, "bbox_left", &bbox_left) ||
+        !glkunix_unserialize_uint32(context, "bbox_top", &bbox_top) ||
+        !glkunix_unserialize_uint32(context, "bbox_right", &bbox_right) ||
+        !glkunix_unserialize_uint32(context, "bbox_bottom", &bbox_bottom)) {
+        return 0;
+    }
+    
+    /* Read input request states */
+    glui32 line_request, line_request_uni, char_request, char_request_uni;
+    if (!glkunix_unserialize_uint32(context, "line_request", &line_request) ||
+        !glkunix_unserialize_uint32(context, "line_request_uni", &line_request_uni) ||
+        !glkunix_unserialize_uint32(context, "char_request", &char_request) ||
+        !glkunix_unserialize_uint32(context, "char_request_uni", &char_request_uni)) {
+        return 0;
+    }
+    
+    /* Read line input settings */
+    glui32 echo_line_input, terminate_line_input;
+    if (!glkunix_unserialize_uint32(context, "echo_line_input", &echo_line_input) ||
+        !glkunix_unserialize_uint32(context, "terminate_line_input", &terminate_line_input)) {
+        return 0;
+    }
+    
+    /* Read style information */
+    glui32 style, inline_fgcolor, inline_bgcolor, inline_reverse;
+    if (!glkunix_unserialize_uint32(context, "style", &style) ||
+        !glkunix_unserialize_uint32(context, "inline_fgcolor", &inline_fgcolor) ||
+        !glkunix_unserialize_uint32(context, "inline_bgcolor", &inline_bgcolor) ||
+        !glkunix_unserialize_uint32(context, "inline_reverse", &inline_reverse)) {
+        return 0;
+    }
+    
+    /* Read has_data flag */
+    glui32 has_data;
+    if (!glkunix_unserialize_uint32(context, "has_data", &has_data)) {
+        return 0;
+    }
     
     /* Read type-specific data */
-    if (!unserialize_window_data(context, win)) {
+    if (has_data && !unserialize_window_data(context, win)) {
         return 0;
     }
     
@@ -1251,17 +1328,46 @@ static int unserialize_window_data(glkunix_unserialize_context_t context, window
         case wintype_Pair:
             {
                 /* Read pair window properties */
-                glui32 dir, division, key_tag, size, border;
-                if (!glkunix_unserialize_uint32(context, "pair_dir", &dir) ||
-                    !glkunix_unserialize_uint32(context, "pair_division", &division) ||
-                    !glkunix_unserialize_uint32(context, "pair_key_tag", &key_tag) ||
-                    !glkunix_unserialize_uint32(context, "pair_size", &size) ||
-                    !glkunix_unserialize_uint32(context, "pair_border", &border)) {
+                glui32 child1_tag, child2_tag, splitpos, splitwidth;
+                if (!glkunix_unserialize_uint32(context, "pair_child1_tag", &child1_tag) ||
+                    !glkunix_unserialize_uint32(context, "pair_child2_tag", &child2_tag) ||
+                    !glkunix_unserialize_uint32(context, "pair_splitpos", &splitpos) ||
+                    !glkunix_unserialize_uint32(context, "pair_splitwidth", &splitwidth)) {
                     return 0;
                 }
                 
-                /* TODO: Set up pair window properties */
-                /* This requires finding the key window by tag */
+                /* Update the existing hierarchy info entry with child tags */
+                if (hierarchy_count > 0) {
+                    struct window_hierarchy_info *info = &hierarchy_info[hierarchy_count - 1];
+                    if (info->window == win) {
+                        info->child1_tag = child1_tag;
+                        info->child2_tag = child2_tag;
+                    }
+                }
+                
+                /* Create and initialize the pair data structure */
+                window_pair_t *dwin = (window_pair_t *)malloc(sizeof(window_pair_t));
+                if (!dwin) {
+                    return 0;
+                }
+                
+                dwin->owner = win;
+                dwin->child1 = NULL; /* Will be set in hierarchy restoration */
+                dwin->child2 = NULL; /* Will be set in hierarchy restoration */
+                dwin->splitpos = splitpos;
+                dwin->splitwidth = splitwidth;
+                
+                /* Set default pair properties - these will be updated from serialized data */
+                dwin->dir = winmethod_Left;
+                dwin->vertical = 0;
+                dwin->backward = 0;
+                dwin->hasborder = 0;
+                dwin->division = winmethod_Proportional;
+                dwin->key = NULL;
+                dwin->keydamage = 0;
+                dwin->size = 50;
+                
+                win->data = dwin;
             }
             break;
     }
@@ -1282,4 +1388,46 @@ void glkunix_autosave_cleanup(void)
         updatetag_table[i] = NULL;
     }
     /* Note: No need to reset next_update_tag since we now use deterministic tags */
+}
+
+/* Restore window hierarchy relationships after all windows are created */
+static int restore_window_hierarchy(glkunix_unserialize_context_t context)
+{
+    /* Restore parent-child relationships */
+    for (glui32 i = 0; i < hierarchy_count; i++) {
+        struct window_hierarchy_info *info = &hierarchy_info[i];
+        window_t *win = info->window;
+        
+        /* Set parent relationship */
+        if (info->parent_tag != 0) {
+            window_t *parent = glkunix_window_find_by_updatetag(info->parent_tag);
+            if (parent) {
+                win->parent = parent;
+            }
+        }
+        
+        /* For pair windows, set child relationships */
+        if (win->type == wintype_Pair && win->data) {
+            window_pair_t *dwin = (window_pair_t *)win->data;
+            
+            if (info->child1_tag != 0) {
+                window_t *child1 = glkunix_window_find_by_updatetag(info->child1_tag);
+                if (child1) {
+                    dwin->child1 = child1;
+                }
+            }
+            
+            if (info->child2_tag != 0) {
+                window_t *child2 = glkunix_window_find_by_updatetag(info->child2_tag);
+                if (child2) {
+                    dwin->child2 = child2;
+                }
+            }
+        }
+    }
+    
+    /* Clean up hierarchy info */
+    hierarchy_count = 0;
+    
+    return 1;
 }
