@@ -150,28 +150,6 @@ include(GNUInstallDirs)
 # Option to build interpreters
 option(BUILD_INTERPRETERS "Build interpreters (terps)" ON)
 
-# Option to build Rust launcher
-option(BUILD_RUST_LAUNCHER "Build Rust version of glkcli launcher" ON)
-
-# Rust launcher build target
-if(BUILD_RUST_LAUNCHER)
-    find_program(CARGO_EXECUTABLE cargo REQUIRED)
-    
-    add_custom_target(glkcli ALL
-        COMMAND ${CARGO_EXECUTABLE} build --release
-        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/launcher_rust
-        COMMENT "Building Rust glkcli launcher"
-    )
-    
-    # Install the Rust binary as the main glkcli
-    install(PROGRAMS ${CMAKE_SOURCE_DIR}/launcher_rust/target/release/glkcli
-            DESTINATION ${CMAKE_INSTALL_BINDIR})
-    
-    message(STATUS "Building Rust launcher (glkcli)")
-else()
-    message(STATUS "Rust launcher disabled - no launcher will be built")
-endif()
-
 if(BUILD_INTERPRETERS)
     # Add interpreters subdirectory
     add_subdirectory(terps)

@@ -1,1 +1,0 @@
-/home/benklop/repos/glkterm/launcher_rust/target/debug/glkcli: /home/benklop/repos/glkterm/launcher_rust/src/config.rs /home/benklop/repos/glkterm/launcher_rust/src/detect.rs /home/benklop/repos/glkterm/launcher_rust/src/launcher.rs /home/benklop/repos/glkterm/launcher_rust/src/main.rs
