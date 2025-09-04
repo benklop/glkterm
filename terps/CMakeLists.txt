@@ -29,6 +29,11 @@ function(terp target)
     # Link with glkterm library
     target_link_libraries(${target} PRIVATE glkterm)
     
+    # Set output directory to avoid conflicts with source directories
+    set_target_properties(${target} PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/bin
+    )
+
     # Link with additional libraries if specified
     if(TERP_LIBS)
         target_link_libraries(${target} PRIVATE ${TERP_LIBS})
