@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("FrankenDrift.GlkRunner")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+5f08c61d48bb0f68a3d056fa19f557249be11f5e")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+361626e8de9e8f9c59f4ce7b7d2724b165772879")]
 [assembly: System.Reflection.AssemblyProductAttribute("FrankenDrift.GlkRunner")]
 [assembly: System.Reflection.AssemblyTitleAttribute("FrankenDrift.GlkRunner")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

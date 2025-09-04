@@ -147,36 +147,30 @@ set_source_files_properties(glkterm/cgunicod.c PROPERTIES
 # Installation
 include(GNUInstallDirs)
 
-# Build launcher library (shared by glkcli and glktui)
-add_library(glklauncher STATIC
-    launcher/launcher.c
-    launcher/launcher_config.c
-    launcher/launcher_detect.c
-    launcher/launcher_cli.c
-)
-
-target_include_directories(glklauncher PUBLIC
-    launcher
-    glkterm
-)
-
-# Build glkcli (command-line launcher)
-add_executable(glkcli
-    launcher/glkcli/main.c
-)
-
-target_link_libraries(glkcli 
-    glklauncher
-    ${NCURSES_LIBRARIES}
-)
-
-target_include_directories(glkcli PRIVATE
-    launcher
-    glkterm
-)
-
 # Option to build interpreters
 option(BUILD_INTERPRETERS "Build interpreters (terps)" ON)
+
+# Option to build Rust launcher
+option(BUILD_RUST_LAUNCHER "Build Rust version of glkcli launcher" ON)
+
+# Rust launcher build target
+if(BUILD_RUST_LAUNCHER)
+    find_program(CARGO_EXECUTABLE cargo REQUIRED)
+    
+    add_custom_target(glkcli ALL
+        COMMAND ${CARGO_EXECUTABLE} build --release
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/launcher_rust
+        COMMENT "Building Rust glkcli launcher"
+    )
+    
+    # Install the Rust binary as the main glkcli
+    install(PROGRAMS ${CMAKE_SOURCE_DIR}/launcher_rust/target/release/glkcli
+            DESTINATION ${CMAKE_INSTALL_BINDIR})
+    
+    message(STATUS "Building Rust launcher (glkcli)")
+else()
+    message(STATUS "Rust launcher disabled - no launcher will be built")
+endif()
 
 if(BUILD_INTERPRETERS)
     # Add interpreters subdirectory
