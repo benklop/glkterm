@@ -8,6 +8,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#ifdef OPT_USE_SIGNALS
+#include <signal.h>
+#endif /* OPT_USE_SIGNALS */
 
 #ifdef OPT_TIMED_INPUT
 #include <sys/time.h>
@@ -88,6 +91,34 @@ void glk_select(event_t *event)
                 SIGINT / SIGHUP signal handlers.*/
             gli_fast_exit();
         }
+        if (just_tstp) {
+            /* ctrl-Z pressed. Do audio teardown here (not in the signal
+               handler) because SDL/PipeWire calls are not async-signal-safe.
+               Then delegate terminal save/restore to ncurses' own handler. */
+            just_tstp = FALSE;
+#ifdef GLK_MODULE_SOUND
+            gli_pause_audio();
+#endif
+            /* Restore ncurses' SIGTSTP handler so it handles endwin(),
+               suspension, and doupdate() on resume. */
+            sigaction(SIGTSTP, &ncurses_sigtstp_handler, NULL);
+            raise(SIGTSTP);
+            /* Execution resumes here after SIGCONT + ncurses doupdate(). */
+            /* Reinstall our handler for the next ctrl-Z. */
+            struct sigaction sa;
+            sa.sa_handler = &gli_sig_tstp;
+            sigemptyset(&sa.sa_mask);
+            sa.sa_flags = 0;
+            sigaction(SIGTSTP, &sa, NULL);
+#ifdef GLK_MODULE_SOUND
+            gli_resume_audio();
+#endif
+            /* SIGCONT fired during raise(); clear the flag and handle
+               halfdelay here so just_resumed doesn't double-process. */
+            just_resumed = FALSE;
+            gli_set_halfdelay();
+            needrefresh = TRUE;
+        }
 #endif /* OPT_USE_SIGNALS */
         
         if (key != ERR) {
@@ -105,6 +136,11 @@ void glk_select(event_t *event)
             flag is set by the SIGCONT signal handler. */
         if (just_resumed) {
             just_resumed = FALSE;
+#ifdef GLK_MODULE_SOUND
+            /* Handle audio resume for the CRIU restore path, where SIGCONT
+               is sent externally without going through the just_tstp block. */
+            gli_resume_audio();
+#endif
             gli_set_halfdelay();
             needrefresh = TRUE;
             continue;
@@ -334,4 +370,3 @@ static void add_millisec_to_time(struct timeval *tv, glui32 msec)
 }
 
 #endif /* OPT_TIMED_INPUT */
-

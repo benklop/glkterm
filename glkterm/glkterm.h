@@ -156,6 +156,8 @@ struct glk_schannel_struct {
     int mix_channel;
     /* the Mix chunk loaded or NULL */
     struct Mix_Chunk *mix_chunk;
+    /* the loops value passed to Mix_PlayChannel (repeats-1, or -1 for infinite) */
+    int mix_loops;
     /* 1 if the channel is in a paused state, even when stopped, or 0 */
     int paused;
     /* the starting volume when changing over time */
@@ -220,6 +222,9 @@ typedef glui32 gli_decomp_block_t[2]; /* count, position */
 #ifdef OPT_USE_SIGNALS
     extern int just_resumed;
     extern int just_killed;
+    extern int just_tstp;
+    extern struct sigaction ncurses_sigtstp_handler;
+    extern void gli_sig_tstp(int val);
 #ifdef OPT_WINCHANGED_SIGNAL
         extern int screen_size_changed;
 #endif /* OPT_WINCHANGED_SIGNAL */
@@ -303,6 +308,8 @@ extern glui32 gli_sound_gestalt(glui32 id);
 extern void gli_initialize_sound(void);
 extern void gli_store_sound_events(void);
 extern void gli_shutdown_sound(void);
+extern void gli_pause_audio(void);
+extern void gli_resume_audio(void);
 
 extern void gli_initialize_styles(void);
 extern void gli_initialize_window_styles(window_t *win);

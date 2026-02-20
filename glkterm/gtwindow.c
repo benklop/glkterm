@@ -44,13 +44,17 @@ static void compute_content_box(void);
 
     int just_resumed;
     int just_killed;
+    int just_tstp;
     static void gli_sig_resume(int val);
     static void gli_sig_interrupt(int val);
+    void gli_sig_tstp(int val);
+    struct sigaction ncurses_sigtstp_handler;
 
 #ifdef OPT_WINCHANGED_SIGNAL
         int screen_size_changed;
         static void gli_sig_winsize(int val);
-        static sig_t ncurses_sigwinch_handler = NULL;
+        static struct sigaction ncurses_sigwinch_handler;
+        static int have_ncurses_sigwinch_handler = 0;
 #endif /* OPT_WINCHANGED_SIGNAL */
 
 #endif /* OPT_USE_SIGNALS */
@@ -75,13 +79,30 @@ void gli_initialize_windows()
 
         just_resumed = FALSE;
         just_killed = FALSE;
-        signal(SIGCONT, &gli_sig_resume);
-        signal(SIGHUP, &gli_sig_interrupt);
-        signal(SIGINT, &gli_sig_interrupt);
+        just_tstp = FALSE;
+        
+        /* Use sigaction() instead of signal() for reliable signal handling.
+           sigaction() doesn't reset the handler after being called, avoiding
+           race conditions that can cause the process to terminate. */
+        struct sigaction sa;
+        sa.sa_handler = &gli_sig_resume;
+        sigemptyset(&sa.sa_mask);
+        sa.sa_flags = SA_RESTART;
+        sigaction(SIGCONT, &sa, NULL);
+        
+        sa.sa_handler = &gli_sig_interrupt;
+        sigaction(SIGHUP, &sa, NULL);
+        sigaction(SIGINT, &sa, NULL);
+        
+        sa.sa_handler = &gli_sig_tstp;
+        sa.sa_flags = 0; /* No SA_RESTART: we want getch() to be interrupted
+                            so the event loop processes just_tstp immediately. */
+        sigaction(SIGTSTP, &sa, &ncurses_sigtstp_handler);
 
 #ifdef OPT_WINCHANGED_SIGNAL
             screen_size_changed = FALSE;
-            ncurses_sigwinch_handler = signal(SIGWINCH, &gli_sig_winsize);
+            sa.sa_handler = &gli_sig_winsize;
+            have_ncurses_sigwinch_handler = (sigaction(SIGWINCH, &sa, &ncurses_sigwinch_handler) == 0);
 #endif /* OPT_WINCHANGED_SIGNAL */
 
 #endif /* OPT_USE_SIGNALS */
@@ -109,7 +130,8 @@ void gli_setup_curses()
 /* Signal handler for SIGCONT. */
 static void gli_sig_resume(int val)
 {
-    signal(SIGCONT, &gli_sig_resume);
+    /* Audio and screen repaint are handled in the event loop (just_resumed);
+       not here, because SDL teardown is not async-signal-safe. */
     just_resumed = TRUE;
 }
 
@@ -118,6 +140,15 @@ static void gli_sig_interrupt(int val)
 {
     just_killed = TRUE;
 }
+
+/* Signal handler for SIGTSTP. Sets a flag for the event loop to handle.
+   The event loop will close audio (non-async-signal-safe) and then raise
+   SIGTSTP itself after resetting the handler to default. */
+void gli_sig_tstp(int val)
+{
+    just_tstp = TRUE;
+}
+
 
 #ifdef OPT_WINCHANGED_SIGNAL
 
@@ -130,9 +161,12 @@ static void gli_sig_winsize(int val)
         clears the screen to reinitialize) and then pushes a KEY_RESIZE.
         However, ncurses can be built without the SIGWINCH handler, so we still
         need a fallback plan. */
-    if (ncurses_sigwinch_handler && ncurses_sigwinch_handler != SIG_ERR) {
-        ncurses_sigwinch_handler(val);
-        signal(SIGWINCH, &gli_sig_winsize);
+    if (have_ncurses_sigwinch_handler && ncurses_sigwinch_handler.sa_handler && 
+        ncurses_sigwinch_handler.sa_handler != SIG_ERR && 
+        ncurses_sigwinch_handler.sa_handler != SIG_DFL && 
+        ncurses_sigwinch_handler.sa_handler != SIG_IGN) {
+        ncurses_sigwinch_handler.sa_handler(val);
+        /* No need to re-register when using sigaction() */
         return;
     }
 #endif
@@ -141,7 +175,12 @@ static void gli_sig_winsize(int val)
     newterm(getenv("TERM"), stdout, stdin);
     gli_setup_curses();
     gcmd_win_resize(NULL, 0);
-    signal(SIGWINCH, &gli_sig_winsize);
+    /* Re-register handler using sigaction() for consistency */
+    struct sigaction sa;
+    sa.sa_handler = &gli_sig_winsize;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = SA_RESTART;
+    sigaction(SIGWINCH, &sa, NULL);
 }
 
 #endif /* OPT_WINCHANGED_SIGNAL */

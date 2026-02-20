@@ -33,6 +33,7 @@ static TAILQ_HEAD(unused1, otherres_struct) otherres_list =
     TAILQ_HEAD_INITIALIZER(otherres_list);
 
 static SDL_mutex *mutex = NULL;
+static int audio_is_paused = FALSE;
 static TAILQ_HEAD(unused2, glk_schannel_event_struct) schannel_events =
     TAILQ_HEAD_INITIALIZER(schannel_events);
 static TAILQ_HEAD(unused3, glk_schannel_struct) schannels =
@@ -174,6 +175,7 @@ static schannel_t *new_schannel(glui32 volume, glui32 rock)
     chan->finished_event_data = NULL;
     chan->mix_channel = -1;
     chan->mix_chunk = NULL;
+    chan->mix_loops = 0;
     chan->paused = FALSE;
     chan->volume_sdl_timerid = 0;
     chan->volume_begin = 0;
@@ -214,6 +216,7 @@ static int play_resource(schannel_t *chan, Mix_Chunk *mix_chunk,
 
     do {
         chan->mix_chunk = mix_chunk;
+        chan->mix_loops = repeats - 1;
         chan->mix_channel = Mix_PlayChannel(-1, chan->mix_chunk, repeats - 1);
         if (chan->mix_channel < 0) {
             warningf("sound: error playing resource: %s", Mix_GetError());
@@ -360,6 +363,80 @@ void gli_shutdown_sound(void)
     Mix_CloseAudio();
     Mix_Quit();
     SDL_Quit();
+}
+
+void gli_pause_audio(void)
+{
+    if (!mutex || audio_is_paused) {
+        return;
+    }
+    
+    SDL_LockMutex(mutex);
+    
+    /* Pause all currently playing channels */
+    schannel_t *chan = NULL;
+    TAILQ_FOREACH(chan, &schannels, entries) {
+        if (chan->mix_chunk && !chan->paused) {
+            Mix_Pause(chan->mix_channel);
+            chan->paused = TRUE;
+        }
+    }
+    
+    SDL_UnlockMutex(mutex);
+
+    /* Close the audio device and fully quit SDL to ensure all D-Bus
+       connections (PipeWire session bus, RTKit system bus) opened by
+       SDL3's audio backend are released. SDL_QuitSubSystem alone is
+       insufficient — SDL3 holds D-Bus connections outside the audio
+       subsystem lifecycle. Since glkterm uses SDL only for audio,
+       SDL_Quit() is equivalent here but complete. */
+    Mix_CloseAudio();
+    Mix_Quit();
+    SDL_Quit();
+    audio_is_paused = TRUE;
+}
+
+void gli_resume_audio(void)
+{
+    if (!mutex || !audio_is_paused) {
+        return;
+    }
+    
+    /* Reinitialize the SDL audio subsystem and mixer backends so that a
+       fresh connection to the audio server (PipeWire, PulseAudio) is made. */
+    if (SDL_Init(SDL_INIT_AUDIO) < 0) {
+        warningf("sound: error reinitializing SDL audio: %s", SDL_GetError());
+        return;
+    }
+    /* Ignore the return because we may still have enough sound support. */
+    Mix_Init(MIX_INIT_MOD | MIX_INIT_OGG);
+    if (Mix_OpenAudio(GLK_SOUND_FREQUENCY, MIX_DEFAULT_FORMAT,
+                      GLK_SOUND_CHANNELS, GLK_SOUND_CHUNK_SIZE) < 0) {
+        warningf("sound: error reopening audio: %s", Mix_GetError());
+        SDL_QuitSubSystem(SDL_INIT_AUDIO);
+        return;
+    }
+    /* Mix_OpenAudio resets mixer state, so these must be re-registered. */
+    Mix_ChannelFinished(gli_finished_callback);
+    Mix_AllocateChannels(GLK_SOUND_MIX_CHANNELS);
+
+    SDL_LockMutex(mutex);
+
+    /* Resume all previously playing channels */
+    schannel_t *chan = NULL;
+    TAILQ_FOREACH(chan, &schannels, entries) {
+        if (chan->mix_chunk && chan->paused) {
+            chan->mix_channel = Mix_PlayChannel(-1, chan->mix_chunk, chan->mix_loops);
+            if (chan->mix_channel >= 0) {
+                Mix_Volume(chan->mix_channel,
+                           glkvolume_to_mixvolume(chan->volume_current));
+            }
+            chan->paused = FALSE;
+        }
+    }
+
+    SDL_UnlockMutex(mutex);
+    audio_is_paused = FALSE;
 }
 
 glui32 gli_sound_gestalt(glui32 id)

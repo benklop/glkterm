@@ -55,8 +55,9 @@
     ctrl-C, ctrl-Z and "fg" commands.)
    If this is defined, GlkTerm will call signal() to set a handler
     for SIGINT and SIGHUP, so that glk_set_interrupt_handler() will work
-    right. GlkTerm will also set a handler for SIGCONT, and redraw the
-    screen after you resume the program. If this is not defined, GlkTerm
+    right. GlkTerm will also set handlers for SIGTSTP and SIGCONT to
+    pause/resume audio and redraw the screen after the program resumes.
+    If this is not defined, GlkTerm
     will not run Glk interrupt handlers, and may not redraw the screen
     until a key is hit.
    The pause/resume (redrawing) functionality will be ignored unless
@@ -228,4 +229,3 @@
 */
 
 #endif /* GTOPTION_H */
-
