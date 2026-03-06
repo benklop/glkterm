@@ -1,0 +1,7 @@
+--- a/jquery.min.js
++++ b/jquery.min.js
+@@ -1,3 +1,8 @@
++/* glktwin patches: stub .css() setters, .animate()→immediate callback,
++ * .offset()/.position()/.width()/.height()→0, $.ajax/$.get→reject.
++ * Apply to full jquery.min.js or use patched copy in build. */
+ (function(){})();

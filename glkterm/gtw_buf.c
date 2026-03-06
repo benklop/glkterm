@@ -609,16 +609,19 @@ static void updatetext(window_textbuffer_t *dwin)
                 for (wx=0; wx<ln->printwords; wx++) {
                     tbword_t *wd = &(ln->words[wx]);
                     if (wd->type == wd_Text || wd->type == wd_Blank) {
-                        unsigned char *cx = (unsigned char *)&(dwin->chars[wd->pos]);
-                        /* unsigned, so that addch() doesn't get fed any high
-                            style bits. */
+                        char *cx = &(dwin->chars[wd->pos]);
                         gli_set_window_style(dwin->owner, &wd->styleplus);
-                        for (ix=0; ix<wd->len; ix++, cx++, count++)
-                            addch(*cx);
+                        addnstr(cx, wd->len);
                     }
                 }
                 gli_set_window_style(dwin->owner, NULL);
-                gli_print_spaces(dwin->width - count);
+                {
+                    int cury, curx;
+                    getyx(stdscr, cury, curx);
+                    count = curx - orgx;
+                }
+                if (count < dwin->width)
+                    gli_print_spaces(dwin->width - count);
             }
             else {
                 /* blank lines at bottom */

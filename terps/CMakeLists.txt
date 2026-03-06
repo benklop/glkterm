@@ -15,6 +15,7 @@ option(WITH_SCOTT "Enable the scott interpreter" ON)
 option(WITH_TADS "Enable the tads interpreter" ON)
 option(WITH_TAYLOR "Enable the taylor interpreter" ON)
 option(WITH_FRANKENDRIFT "Enable the frankendrift interpreter (requires .NET)" OFF)
+option(WITH_GLKTWIN "Enable the glktwin interpreter (TUI Twine)" ON)
 
 function(terp target)
     set(options POSIX LTO MATH WARNINGS GPL2)
@@ -522,4 +523,12 @@ endif()
 # It requires adaptation to work with glkterm and is disabled by default
 if(WITH_FRANKENDRIFT)
     add_subdirectory(frankendrift/FrankenDrift.GlkRunner/FrankenDrift.GlkRunner.Gargoyle)
+endif()
+
+# ------------------------------------------------------------------------------
+#
+# glktwin: TUI Twine interpreter (HTML/CSS/JS via lexbor + QuickJS)
+#
+if(WITH_GLKTWIN)
+    add_subdirectory(glktwin)
 endif()

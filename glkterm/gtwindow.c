@@ -7,6 +7,7 @@
 #include "gtoption.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <locale.h>
 
 #ifdef OPT_USE_SIGNALS
 #include <signal.h>
@@ -116,6 +117,7 @@ void gli_initialize_windows()
     is reinitialized for a screen-size change. */
 void gli_setup_curses()
 {
+    setlocale(LC_ALL, "");
     initscr();
     cbreak();
     noecho();
@@ -1217,6 +1219,22 @@ void gli_window_put_char(window_t *win, char ch)
     ch = char_to_native_table[(unsigned char)ch];
 #endif /* OPT_NATIVE_LATIN_1 */
 
+    switch (win->type) {
+        case wintype_TextBuffer:
+            win_textbuffer_putchar(win, ch);
+            break;
+        case wintype_TextGrid:
+            win_textgrid_putchar(win, ch);
+            break;
+    }
+}
+
+void gli_window_put_char_raw(window_t *win, char ch)
+{
+    /* Push a raw byte into the window buffer without Latin-1 printability
+     * filtering. Used for UTF-8 continuation/lead bytes (>= 0x80) which
+     * are not individually printable but form valid multi-byte characters
+     * when rendered together via addnstr() in ncursesw. */
     switch (win->type) {
         case wintype_TextBuffer:
             win_textbuffer_putchar(win, ch);

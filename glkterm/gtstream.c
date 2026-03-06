@@ -737,7 +737,37 @@ static void gli_put_char_uni(stream_t *str, glui32 ch)
                 gli_strict_warning("put_char_uni: window has pending line request");
                 break;
             }
-            gli_window_put_char(str->win, ((ch >= 0x100) ? '?' : ch));
+            if (ch < 0x80) {
+                gli_window_put_char(str->win, (char)ch);
+            } else {
+                /* Encode as UTF-8 and push raw bytes into the window.
+                 * We call gli_window_put_char_raw() to bypass the
+                 * Latin-1 printability filter. ncursesw handles
+                 * multi-byte UTF-8 sequences via addnstr(). */
+                char utf8[5];
+                int nbytes = 0;
+                if (ch < 0x800) {
+                    utf8[0] = 0xC0 | (ch >> 6);
+                    utf8[1] = 0x80 | (ch & 0x3F);
+                    nbytes = 2;
+                } else if (ch < 0x10000) {
+                    utf8[0] = 0xE0 | (ch >> 12);
+                    utf8[1] = 0x80 | ((ch >> 6) & 0x3F);
+                    utf8[2] = 0x80 | (ch & 0x3F);
+                    nbytes = 3;
+                } else if (ch < 0x110000) {
+                    utf8[0] = 0xF0 | (ch >> 18);
+                    utf8[1] = 0x80 | ((ch >> 12) & 0x3F);
+                    utf8[2] = 0x80 | ((ch >> 6) & 0x3F);
+                    utf8[3] = 0x80 | (ch & 0x3F);
+                    nbytes = 4;
+                }
+                {
+                    int bi;
+                    for (bi = 0; bi < nbytes; bi++)
+                        gli_window_put_char_raw(str->win, utf8[bi]);
+                }
+            }
             if (str->win->echostr)
                 gli_put_char_uni(str->win->echostr, ch);
             break;

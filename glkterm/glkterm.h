@@ -297,6 +297,7 @@ extern void gli_windows_place_cursor(void);
 extern void gli_windows_set_paging(int forcetoend);
 extern void gli_windows_trim_buffers(void);
 extern void gli_window_put_char(window_t *win, char ch);
+extern void gli_window_put_char_raw(window_t *win, char ch);
 extern void gli_windows_unechostream(stream_t *str);
 extern void gli_print_spaces(int len);
 

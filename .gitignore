@@ -3,3 +3,8 @@
 Make.*
 build/
 .vscode/
+.cache/
+games/
+CMakeFiles/
+*.cmake
+Makefile
